@@ -7,9 +7,9 @@ root {
 
 .crosshair {
 	position: absolute;
-	width: 24px;
-	height: 24px;
-	transform: translate( -12px, -12px );
+	width: 20px;
+	height: 20px;
+	transform: translate( -10px, -10px );
 	pointer-events: none;
 }
 
@@ -20,15 +20,15 @@ root {
 }
 
 .bar.horizontal {
-	width: 24px;
-	height: 3px;
-	top: 11px;
+	width: 20px;
+	height: 2px;
+	top: 9px;
 	left: 0px;
 }
 
 .bar.vertical {
-	width: 3px;
-	height: 24px;
+	width: 2px;
+	height: 20px;
 	top: 0px;
-	left: 11px;
+	left: 9px;
 }

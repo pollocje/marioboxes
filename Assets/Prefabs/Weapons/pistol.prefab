@@ -123,7 +123,26 @@
         "StartAsleep": false
       }
     ],
-    "Children": [],
+    "Children": [
+      {
+        "__guid": "a28d7336-38e5-47d8-a644-f4e2d5493205",
+        "__version": 2,
+        "Flags": 0,
+        "Name": "Barrel",
+        "Position": "15.870657,0,25.2093048",
+        "Rotation": "0,0,0,1",
+        "Scale": "1,1,1",
+        "Tags": "",
+        "Enabled": true,
+        "NetworkMode": 2,
+        "NetworkFlags": 0,
+        "NetworkOrphaned": 0,
+        "NetworkTransmit": true,
+        "OwnerTransfer": 1,
+        "Components": [],
+        "Children": []
+      }
+    ],
     "__properties": {
       "NetworkInterpolation": true,
       "TimeScale": 1,

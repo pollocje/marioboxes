@@ -3,7 +3,7 @@
     "__guid": "0c7d5599-d801-43e7-9ebb-155e486b13ba",
     "__version": 2,
     "Flags": 0,
-    "Name": "Player1",
+    "Name": "player1",
     "Position": "0,0,0",
     "Rotation": "0,0,0,1",
     "Scale": "1,1,1",
@@ -200,66 +200,71 @@
         "Children": []
       },
       {
-        "__guid": "ad3aab32-d094-4f75-8ab9-73d9081ebcf7",
+        "__guid": "249b8a3c-4deb-4d73-b2c3-bbb7c20c6bb6",
         "__version": 2,
-        "Flags": 0,
-        "Name": "Pistol",
-        "Position": "-3.10484409,-40.3414764,-13.0062141",
-        "Rotation": "0,-0,-0.707106769,0.707106769",
-        "Scale": "0.660724699,0.660724699,0.660724699",
-        "Tags": "",
-        "Enabled": true,
-        "NetworkMode": 2,
-        "NetworkFlags": 0,
-        "NetworkOrphaned": 0,
-        "NetworkTransmit": true,
-        "OwnerTransfer": 1,
-        "Components": [
-          {
-            "__type": "GunAim",
-            "__guid": "c2b52c51-7b60-4a60-9542-eb28597c56aa",
-            "__enabled": true,
-            "Flags": 0,
-            "BarrelOffset": "0,0,0,1",
-            "OnComponentDestroy": null,
-            "OnComponentDisabled": null,
-            "OnComponentEnabled": null,
-            "OnComponentFixedUpdate": null,
-            "OnComponentStart": null,
-            "OnComponentUpdate": null,
-            "OrbitRadius": 60
-          },
-          {
-            "__type": "Sandbox.ModelRenderer",
-            "__guid": "01c93c1f-c256-4f0c-b1ad-ba0978601665",
-            "__enabled": true,
-            "Flags": 0,
-            "BodyGroups": 18446744073709551615,
-            "CreateAttachments": false,
-            "LodOverride": null,
-            "MaterialGroup": null,
-            "MaterialOverride": null,
-            "Materials": null,
-            "Model": "cbt_weapon_pistol_fp_sharedassets4_assets_217.vmdl",
-            "OnComponentDestroy": null,
-            "OnComponentDisabled": null,
-            "OnComponentEnabled": null,
-            "OnComponentFixedUpdate": null,
-            "OnComponentStart": null,
-            "OnComponentUpdate": null,
-            "RenderOptions": {
-              "GameLayer": true,
-              "OverlayLayer": false,
-              "BloomLayer": false,
-              "AfterUILayer": false
+        "__Prefab": "prefabs/weapons/pistol.prefab",
+        "__PrefabInstancePatch": {
+          "AddedObjects": [],
+          "RemovedObjects": [],
+          "PropertyOverrides": [
+            {
+              "Target": {
+                "Type": "GameObject",
+                "IdValue": "6b22ced8-dd08-4229-b56d-636d8627921c"
+              },
+              "Property": "Position",
+              "Value": "-3.42944717,-37.8976364,-1.40216589"
             },
-            "RenderType": "On",
-            "Tint": "1,1,1,1"
-          }
-        ],
-        "Children": []
+            {
+              "Target": {
+                "Type": "GameObject",
+                "IdValue": "6b22ced8-dd08-4229-b56d-636d8627921c"
+              },
+              "Property": "Rotation",
+              "Value": "0,-0,-0.707106769,0.707106769"
+            },
+            {
+              "Target": {
+                "Type": "GameObject",
+                "IdValue": "6b22ced8-dd08-4229-b56d-636d8627921c"
+              },
+              "Property": "Scale",
+              "Value": "0.374432713,0.374432713,0.374432713"
+            }
+          ],
+          "MovedObjects": []
+        },
+        "__PrefabIdToInstanceId": {
+          "6b22ced8-dd08-4229-b56d-636d8627921c": "249b8a3c-4deb-4d73-b2c3-bbb7c20c6bb6",
+          "399fdafd-d614-41af-ab49-6dd0ca8eea71": "d30fc04e-b7a9-44bc-bb44-83f5c5b92177",
+          "461391f5-b50c-42df-a2c9-5f1deb1a6c73": "9237b397-a511-4a25-a160-ca71cb871ee7",
+          "1a305534-da2f-49aa-afc4-af32ce5a83fc": "d7ef8a5f-21e5-4cf9-b149-29b617ec77e1",
+          "ec2949da-d581-4c53-b23d-70b4ea0f2c83": "6b9029b8-0a9e-4dac-b18b-896ab7b1d952",
+          "a28d7336-38e5-47d8-a644-f4e2d5493205": "b0fdcf44-a2c6-40c7-b788-30ec893ff4af"
+        }
       }
-    ]
+    ],
+    "__properties": {
+      "NetworkInterpolation": true,
+      "TimeScale": 1,
+      "WantsSystemScene": true,
+      "Metadata": {},
+      "NavMesh": {
+        "Enabled": false,
+        "IncludeStaticBodies": true,
+        "IncludeKeyframedBodies": true,
+        "EditorAutoUpdate": false,
+        "AgentHeight": 64,
+        "AgentRadius": 16,
+        "AgentStepSize": 18,
+        "AgentMaxSlope": 40,
+        "ExcludedBodies": "",
+        "IncludedBodies": "",
+        "DeferGeneration": false,
+        "CustomBounds": false
+      }
+    },
+    "__variables": []
   },
   "ResourceVersion": 2,
   "ShowInMenu": false,
@@ -267,8 +272,7 @@
   "MenuIcon": null,
   "DontBreakAsTemplate": false,
   "__references": [
-    "andiq.crate#12840",
-    "jakx.pistoldeusex#34567"
+    "andiq.crate#12840"
   ],
   "__version": 2
 }

@@ -8,12 +8,14 @@ public sealed class Bullet : Component
 	private float _spawnTime;
 	private Rigidbody _rb;
 	private Vector3 _lastPosition;
+	private GameObject _tracer;
 
 	protected override void OnStart()
 	{
 		_spawnTime = Time.Now;
 		_rb = Components.Get<Rigidbody>();
 		_lastPosition = WorldPosition;
+		_tracer = GameObject.Children.FirstOrDefault();
 	}
 
 	protected override void OnUpdate()
@@ -33,8 +35,8 @@ public sealed class Bullet : Component
 		WorldPosition = WorldPosition.WithX( _lastPosition.x );
 
 		// Align tracer with travel direction
-		if ( vel.LengthSquared > 1f )
-			WorldRotation = Rotation.LookAt( vel.Normal, Vector3.Up );
+		if ( vel.LengthSquared > 1f && _tracer is not null )
+			_tracer.WorldRotation = Rotation.LookAt( vel.Normal, Vector3.Up );
 
 		// Trace from last frame position to current — catches fast bullet hits
 		var tr = Scene.Trace
