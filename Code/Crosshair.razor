@@ -1,0 +1,14 @@
+@using Sandbox;
+@using Sandbox.UI;
+@inherits PanelComponent
+
+<root>
+	<div class="crosshair" style="left: @(Mouse.Position.x)px; top: @(Mouse.Position.y)px;">
+		<div class="bar horizontal"></div>
+		<div class="bar vertical"></div>
+	</div>
+</root>
+
+@code {
+	protected override int BuildHash() => System.HashCode.Combine( Mouse.Position );
+}
