@@ -2,41 +2,45 @@ using Sandbox;
 
 public sealed class GunAim : Component
 {
+	[Property] public GameObject PlayerCenter { get; set; }
+	[Property] public GameObject BarrelTip { get; set; }
 	[Property] public float OrbitRadius { get; set; } = 60f;
-	[Property] public Vector3 PivotOffset { get; set; } = Vector3.Zero;
 
-	private Vector3 _aimDir = new Vector3( 0f, 1f, 0f );
-	private bool _facingRight = false;
+	// The aim direction on the YZ plane, used by Shoot
+	public Vector3 AimDir { get; private set; } = new Vector3( 0f, 1f, 0f );
 
 	protected override void OnUpdate()
 	{
 		var camera = Scene.Camera;
 		if ( camera is null ) return;
 
-		var parent = GameObject.Parent;
-		if ( parent is null ) return;
+		var center = PlayerCenter is not null ? PlayerCenter.WorldPosition : WorldPosition;
 
-		// Screen-space angle from player to cursor — matches exactly where the reticle appears
-		var playerScreen = camera.PointToScreenPixels( parent.WorldPosition );
-		var diff = Mouse.Position - playerScreen;
+		// Project cursor onto the game plane (X = player X)
+		var ray = camera.ScreenPixelToRay( Mouse.Position );
+		if ( System.Math.Abs( ray.Forward.x ) < 0.001f ) return;
 
-		if ( diff.LengthSquared > 400f )
+		float t = (center.x - ray.Position.x) / ray.Forward.x;
+		var cursorWorld = ray.Position + ray.Forward * t;
+
+		// Direction from player center to cursor on the YZ plane
+		var delta = (cursorWorld - center).WithX( 0f );
+		if ( delta.LengthSquared > 100f )
+			AimDir = delta.Normal;
+
+		// Rotate so the barrel points outward (away from player)
+		WorldRotation = Rotation.LookAt( AimDir, Vector3.Up );
+
+		// Place pivot on the circle
+		WorldPosition = center + AimDir * OrbitRadius;
+
+		// Shift gun perpendicular to AimDir until BarrelTip lies on the aim line
+		if ( BarrelTip is not null )
 		{
-			var worldDiff = camera.WorldRotation.Right * diff.x + camera.WorldRotation.Up * (-diff.y);
-			var candidate = worldDiff.WithX( 0f );
-			if ( candidate.LengthSquared > 0.001f )
-				_aimDir = candidate.Normal;
+			var barrelPos = BarrelTip.WorldPosition.WithX( 0f );
+			var centerYZ = center.WithX( 0f );
+			var onLine = centerYZ + Vector3.Dot( barrelPos - centerYZ, AimDir ) * AimDir;
+			WorldPosition -= barrelPos - onLine;
 		}
-
-		// Hysteresis on left/right flip to avoid flicker near vertical
-		if ( _aimDir.y > 0.15f ) _facingRight = false;
-		else if ( _aimDir.y < -0.15f ) _facingRight = true;
-
-		float elevDeg = (float)(System.Math.Atan2( _aimDir.z, System.Math.Abs( _aimDir.y ) ) * (180.0 / System.Math.PI));
-		WorldRotation = _facingRight
-			? Rotation.From( -elevDeg, -90, 0 )
-			: Rotation.From( -elevDeg, 90, 0 );
-
-		WorldPosition = parent.WorldPosition + _aimDir * OrbitRadius + WorldRotation * PivotOffset;
 	}
 }

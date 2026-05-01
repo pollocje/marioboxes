@@ -200,7 +200,25 @@
         "Children": []
       },
       {
-        "__guid": "249b8a3c-4deb-4d73-b2c3-bbb7c20c6bb6",
+        "__guid": "97f250e8-c05c-491a-a48f-c7d15e9c57f9",
+        "__version": 2,
+        "Flags": 0,
+        "Name": "Center",
+        "Position": "-2.56348848,-7.24341869,0",
+        "Rotation": "0,0,0,1",
+        "Scale": "1,1,1",
+        "Tags": "",
+        "Enabled": true,
+        "NetworkMode": 2,
+        "NetworkFlags": 0,
+        "NetworkOrphaned": 0,
+        "NetworkTransmit": true,
+        "OwnerTransfer": 1,
+        "Components": [],
+        "Children": []
+      },
+      {
+        "__guid": "82f7e78c-d010-48ab-8733-dc2a22f0779b",
         "__version": 2,
         "__Prefab": "prefabs/weapons/pistol.prefab",
         "__PrefabInstancePatch": {
@@ -213,7 +231,7 @@
                 "IdValue": "6b22ced8-dd08-4229-b56d-636d8627921c"
               },
               "Property": "Position",
-              "Value": "-3.42944717,-37.8976364,-1.40216589"
+              "Value": "-1.95620251,-33.9653473,-4.53255415"
             },
             {
               "Target": {
@@ -229,18 +247,19 @@
                 "IdValue": "6b22ced8-dd08-4229-b56d-636d8627921c"
               },
               "Property": "Scale",
-              "Value": "0.374432713,0.374432713,0.374432713"
+              "Value": "0.448037624,0.448037624,0.448037624"
             }
           ],
           "MovedObjects": []
         },
         "__PrefabIdToInstanceId": {
-          "6b22ced8-dd08-4229-b56d-636d8627921c": "249b8a3c-4deb-4d73-b2c3-bbb7c20c6bb6",
-          "399fdafd-d614-41af-ab49-6dd0ca8eea71": "d30fc04e-b7a9-44bc-bb44-83f5c5b92177",
-          "461391f5-b50c-42df-a2c9-5f1deb1a6c73": "9237b397-a511-4a25-a160-ca71cb871ee7",
-          "1a305534-da2f-49aa-afc4-af32ce5a83fc": "d7ef8a5f-21e5-4cf9-b149-29b617ec77e1",
-          "ec2949da-d581-4c53-b23d-70b4ea0f2c83": "6b9029b8-0a9e-4dac-b18b-896ab7b1d952",
-          "a28d7336-38e5-47d8-a644-f4e2d5493205": "b0fdcf44-a2c6-40c7-b788-30ec893ff4af"
+          "6b22ced8-dd08-4229-b56d-636d8627921c": "82f7e78c-d010-48ab-8733-dc2a22f0779b",
+          "461391f5-b50c-42df-a2c9-5f1deb1a6c73": "470f56b8-e7e2-400d-8878-d8eb2569152c",
+          "1a305534-da2f-49aa-afc4-af32ce5a83fc": "6894218e-5bde-4263-8536-422f9f3bcf13",
+          "ec2949da-d581-4c53-b23d-70b4ea0f2c83": "2842110d-4f95-4371-865f-ab04f2114462",
+          "a28d7336-38e5-47d8-a644-f4e2d5493205": "269d7605-c401-41ca-8927-0fcb01a4b9c5",
+          "54fd242a-2e6a-4ce9-8de2-ae7eb415d1fb": "be68a61b-1c42-412e-8fd3-523887e91625",
+          "709216f1-cf13-4217-88a7-8bb5132f4126": "79351ae2-3509-4255-b1aa-d8fc277fb0ea"
         }
       }
     ],
