@@ -1,0 +1,21 @@
+@inherits PanelComponent
+
+<root style="width: 100%; height: 100%;">
+	<div style="display: @(IsReloading ? "flex" : "none"); width: 100%; height: 100%; background-color: rgba(50,50,50,0.9); border-radius: 4px; position: relative; overflow: hidden;">
+		<div style="width: @(RemainingPercent)%; height: 100%; background-color: rgba(180,180,180,0.9); position: absolute; left: 0; top: 0;"></div>
+		<label style="position: absolute; width: 100%; height: 100%; text-align: center; color: white; font-size: 22px; font-weight: bold; display: flex; align-items: center; justify-content: center;">RELOADING</label>
+	</div>
+</root>
+
+@code
+{
+	Shoot Shoot => GameObject?.Parent?.Parent?.Components.Get<Shoot>( FindMode.EverythingInSelfAndDescendants );
+
+	bool IsReloading => Shoot?.IsReloading ?? false;
+	float RemainingPercent => Shoot is not null ? (1f - Shoot.ReloadFraction) * 100f : 0f;
+
+	protected override void OnUpdate()
+	{
+		StateHasChanged();
+	}
+}

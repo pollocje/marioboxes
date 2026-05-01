@@ -96,9 +96,9 @@
         "__version": 2,
         "Flags": 0,
         "Name": "Object",
-        "Position": "0,0,0.642728031",
-        "Rotation": "0,0,0.707106769,0.707106769",
-        "Scale": "13.0609341,0.175432712,0.365866095",
+        "Position": "0.0573710315,-5.01553465E-09,0.642728031",
+        "Rotation": "0,0,0,1",
+        "Scale": "-12.3840237,3.88276243,1.62354434",
         "Tags": "",
         "Enabled": true,
         "NetworkMode": 2,
@@ -116,7 +116,7 @@
             "CreateAttachments": false,
             "LodOverride": null,
             "MaterialGroup": null,
-            "MaterialOverride": "materials/bullet.vmat",
+            "MaterialOverride": "materials/future/light_white.vmat",
             "Materials": null,
             "Model": "models/weapons/sbox_ammo/9mm_bullet/9mm_bullet.vmdl",
             "OnComponentDestroy": null,
@@ -133,6 +133,21 @@
             },
             "RenderType": "On",
             "Tint": "1,1,1,1"
+          },
+          {
+            "__type": "Bullet",
+            "__guid": "9fb3f965-691c-4134-b0ac-f23c0e5c70aa",
+            "__enabled": true,
+            "Flags": 0,
+            "Damage": 10,
+            "MaxLifetime": 100,
+            "MaxRange": 2000,
+            "OnComponentDestroy": null,
+            "OnComponentDisabled": null,
+            "OnComponentEnabled": null,
+            "OnComponentFixedUpdate": null,
+            "OnComponentStart": null,
+            "OnComponentUpdate": null
           }
         ],
         "Children": []
@@ -166,7 +181,8 @@
   "MenuIcon": null,
   "DontBreakAsTemplate": false,
   "__references": [
-    "facepunch.9mm_bullet#144858"
+    "facepunch.9mm_bullet#144858",
+    "hammermafia.lightwhite#203411"
   ],
   "__version": 2
 }

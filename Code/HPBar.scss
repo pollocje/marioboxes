@@ -1,0 +1,37 @@
+root {
+	width: 100%;
+	height: 100%;
+}
+
+.hpbar {
+	width: 100%;
+	height: 100%;
+	background-color: rgba( 40, 40, 40, 0.85 );
+	border-radius: 4px;
+	position: relative;
+	overflow: hidden;
+	border: 1px solid rgba( 0, 0, 0, 0.5 );
+
+	&__fill {
+		height: 100%;
+		background-color: rgba( 200, 20, 20, 0.9 );
+		position: absolute;
+		left: 0;
+		top: 0;
+		transition: width 0.15s ease;
+	}
+
+	&__text {
+		position: absolute;
+		width: 100%;
+		height: 100%;
+		text-align: center;
+		color: white;
+		font-size: 13px;
+		font-weight: bold;
+		text-shadow: 1px 1px 2px black;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+	}
+}

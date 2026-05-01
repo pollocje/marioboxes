@@ -2,55 +2,54 @@ using Sandbox;
 
 public sealed class Bullet : Component
 {
-	[Property] public float Lifetime { get; set; } = 3f;
+	[Property] public float MaxLifetime { get; set; } = 3f;
+	[Property] public float MaxRange { get; set; } = 2000f;
 	[Property] public float Damage { get; set; } = 10f;
 
-	private float _spawnTime;
-	private Rigidbody _rb;
-	private Vector3 _lastPosition;
-	private GameObject _tracer;
+	public Vector3 Velocity { get; set; }
+	public GameObject Source { get; set; }
+
+	private Vector3 _startPosition;
+	private float _age;
+	private float _planeX;
 
 	protected override void OnStart()
 	{
-		_spawnTime = Time.Now;
-		_rb = Components.Get<Rigidbody>();
-		_lastPosition = WorldPosition;
-		_tracer = GameObject.Children.FirstOrDefault();
+		_startPosition = WorldPosition;
+		_planeX = WorldPosition.x;
 	}
 
-	protected override void OnUpdate()
+	protected override void OnFixedUpdate()
 	{
-		if ( Time.Now - _spawnTime >= Lifetime )
-		{
-			GameObject.Destroy();
-			return;
-		}
+		// Orient tracer along travel direction (done here so Velocity is guaranteed set)
+		if ( Velocity.LengthSquared > 0f )
+			WorldRotation = Rotation.LookAt( Velocity.Normal, Vector3.Up );
 
-		if ( _rb is null ) return;
 
-		// Keep bullet on the 2D plane
-		var vel = _rb.Velocity;
-		vel.x = 0f;
-		_rb.Velocity = vel;
-		WorldPosition = WorldPosition.WithX( _lastPosition.x );
+		var lastPos = WorldPosition;
+		var nextPos = (lastPos + Velocity * Time.Delta).WithX( _planeX );
 
-		// Align tracer with travel direction
-		if ( vel.LengthSquared > 1f && _tracer is not null )
-			_tracer.WorldRotation = Rotation.LookAt( vel.Normal, Vector3.Up );
-
-		// Trace from last frame position to current — catches fast bullet hits
-		var tr = Scene.Trace
-			.Ray( _lastPosition, WorldPosition )
+		// Sweep from last to next position to catch hits without tunneling
+		var tr = Scene.Trace.Ray( lastPos, nextPos )
 			.IgnoreGameObjectHierarchy( GameObject )
+			.IgnoreGameObjectHierarchy( Source )
 			.Run();
 
 		if ( tr.Hit )
 		{
-			// TODO: deal damage to tr.GameObject
+			var health = tr.GameObject.Components.Get<Health>()
+				?? tr.GameObject.Components.GetInParent<Health>();
+			health?.TakeDamage( Damage );
 			GameObject.Destroy();
 			return;
 		}
 
-		_lastPosition = WorldPosition;
+		WorldPosition = nextPos;
+
+		_age += Time.Delta;
+		if ( _age >= MaxLifetime || (WorldPosition - _startPosition).Length >= MaxRange )
+		{
+			GameObject.Destroy();
+		}
 	}
 }

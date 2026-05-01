@@ -1,12 +1,12 @@
 {
   "RootObject": {
-    "__guid": "6b22ced8-dd08-4229-b56d-636d8627921c",
+    "__guid": "403f5d5d-dbb5-49bd-9d79-d76c88ee096a",
     "__version": 2,
     "Flags": 0,
-    "Name": "pistol",
-    "Position": "-0.675273418,-6.11745071,0",
+    "Name": "weapon_ar15",
+    "Position": "0,0,0",
     "Rotation": "0,0,0,1",
-    "Scale": "1,1,1",
+    "Scale": "0.611305356,0.611305356,0.611305356",
     "Tags": "",
     "Enabled": true,
     "NetworkMode": 2,
@@ -17,7 +17,7 @@
     "Components": [
       {
         "__type": "Sandbox.ModelRenderer",
-        "__guid": "461391f5-b50c-42df-a2c9-5f1deb1a6c73",
+        "__guid": "39a0de68-9f56-4ae8-80b8-452735121864",
         "__enabled": true,
         "Flags": 0,
         "BodyGroups": 18446744073709551615,
@@ -26,7 +26,7 @@
         "MaterialGroup": null,
         "MaterialOverride": null,
         "Materials": null,
-        "Model": "cbt_weapon_pistol_fp_sharedassets4_assets_217.vmdl",
+        "Model": "models workshop/ar15/ar15.vmdl",
         "OnComponentDestroy": null,
         "OnComponentDisabled": null,
         "OnComponentEnabled": null,
@@ -43,72 +43,42 @@
         "Tint": "1,1,1,1"
       },
       {
-        "__type": "Sandbox.ModelCollider",
-        "__guid": "1a305534-da2f-49aa-afc4-af32ce5a83fc",
+        "__type": "WeaponData",
+        "__guid": "04e11fec-859c-4e74-b1b5-1a3b56d8efcd",
         "__enabled": true,
         "Flags": 0,
-        "ColliderFlags": 0,
-        "Elasticity": null,
-        "Friction": null,
-        "IsTrigger": false,
-        "Model": "cbt_weapon_pistol_fp_sharedassets4_assets_217.vmdl",
-        "OnComponentDestroy": null,
-        "OnComponentDisabled": null,
-        "OnComponentEnabled": null,
-        "OnComponentFixedUpdate": null,
-        "OnComponentStart": null,
-        "OnComponentUpdate": null,
-        "OnObjectTriggerEnter": null,
-        "OnObjectTriggerExit": null,
-        "OnTriggerEnter": null,
-        "OnTriggerExit": null,
-        "RollingResistance": null,
-        "Static": false,
-        "Surface": null,
-        "SurfaceVelocity": "0,0,0"
-      },
-      {
-        "__type": "Sandbox.Rigidbody",
-        "__guid": "ec2949da-d581-4c53-b23d-70b4ea0f2c83",
-        "__enabled": true,
-        "Flags": 0,
-        "AngularDamping": 0,
-        "EnableImpactDamage": true,
-        "EnhancedCcd": false,
-        "Gravity": true,
-        "GravityScale": 1,
-        "ImpactDamage": 0,
-        "LinearDamping": 0,
-        "Locking": {
-          "X": false,
-          "Y": false,
-          "Z": false,
-          "Pitch": false,
-          "Yaw": false,
-          "Roll": false
+        "BarrelTip": {
+          "_type": "gameobject",
+          "go": "e6e69324-2eb4-44fe-b635-012b5e88151d"
         },
-        "MassCenterOverride": "0,0,0",
-        "MassOverride": 0,
-        "MinImpactDamageSpeed": 500,
-        "MotionEnabled": true,
+        "BulletSpeed": 1500,
+        "Damage": 5,
+        "FireRate": 0.05,
+        "FireSound": "sounds/bolt action rifle shot.sound",
+        "MagSize": 30,
+        "MuzzleFlashPrefab": {
+          "_type": "gameobject",
+          "prefab": "prefabs/muzzleflashes/rifle_muzzleflash.prefab"
+        },
         "OnComponentDestroy": null,
         "OnComponentDisabled": null,
         "OnComponentEnabled": null,
         "OnComponentFixedUpdate": null,
         "OnComponentStart": null,
         "OnComponentUpdate": null,
-        "OverrideMassCenter": false,
-        "RigidbodyFlags": 0,
-        "StartAsleep": false
+        "OrbitRadius": 50,
+        "ReloadSound": "sounds/m4 reload sequence.sound",
+        "ReloadTime": 5,
+        "RotationOffset": "0,-90,0"
       }
     ],
     "Children": [
       {
-        "__guid": "a28d7336-38e5-47d8-a644-f4e2d5493205",
+        "__guid": "e6e69324-2eb4-44fe-b635-012b5e88151d",
         "__version": 2,
         "Flags": 0,
         "Name": "BarrelTip",
-        "Position": "15.870657,0,25.2093048",
+        "Position": "0,43.1943054,6.84907579",
         "Rotation": "0,0,0,1",
         "Scale": "1,1,1",
         "Tags": "",
@@ -122,29 +92,11 @@
         "Children": []
       },
       {
-        "__guid": "54fd242a-2e6a-4ce9-8de2-ae7eb415d1fb",
+        "__guid": "c960d89e-c529-4abc-ad1a-50cdae57d0c1",
         "__version": 2,
         "Flags": 0,
         "Name": "BarrelBase",
-        "Position": "-8.85074615,0,25.2093048",
-        "Rotation": "0,0,0,1",
-        "Scale": "1,1,1",
-        "Tags": "",
-        "Enabled": true,
-        "NetworkMode": 2,
-        "NetworkFlags": 0,
-        "NetworkOrphaned": 0,
-        "NetworkTransmit": true,
-        "OwnerTransfer": 1,
-        "Components": [],
-        "Children": []
-      },
-      {
-        "__guid": "709216f1-cf13-4217-88a7-8bb5132f4126",
-        "__version": 2,
-        "Flags": 0,
-        "Name": "GunCentre",
-        "Position": "2.55560207,0,24.3768101",
+        "Position": "0,0,8.74891663",
         "Rotation": "0,0,0,1",
         "Scale": "1,1,1",
         "Tags": "",
@@ -186,7 +138,9 @@
   "MenuIcon": null,
   "DontBreakAsTemplate": false,
   "__references": [
-    "jakx.pistoldeusex#34567"
+    "defqwop.ar15#206210",
+    "drakefruit.bolty_shot#91286",
+    "drakefruit.rifle_reload#91283"
   ],
   "__version": 2
 }

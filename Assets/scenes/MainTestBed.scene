@@ -1,0 +1,282 @@
+{
+  "__guid": "7912912b-43ed-4807-8f7c-c594e5f3ddc1",
+  "GameObjects": [
+    {
+      "__guid": "47375284-fa72-470a-9b96-b7a7fddbce7d",
+      "__version": 2,
+      "Flags": 0,
+      "Name": "Directional Light",
+      "Position": "0,0,200",
+      "Rotation": "-0.245984167,0.593858242,0.293152541,0.707732737",
+      "Scale": "1,1,1",
+      "Tags": "light_directional,light",
+      "Enabled": true,
+      "NetworkMode": 2,
+      "NetworkFlags": 0,
+      "NetworkOrphaned": 0,
+      "NetworkTransmit": true,
+      "OwnerTransfer": 1,
+      "Components": [
+        {
+          "__type": "Sandbox.DirectionalLight",
+          "__guid": "0e2ccc29-6ca1-4321-929c-905b15d147e0",
+          "__enabled": true,
+          "Flags": 0,
+          "FogMode": "Enabled",
+          "FogStrength": 1,
+          "LightColor": "0.91373,0.98039,1,1",
+          "OnComponentDestroy": null,
+          "OnComponentDisabled": null,
+          "OnComponentEnabled": null,
+          "OnComponentFixedUpdate": null,
+          "OnComponentStart": null,
+          "OnComponentUpdate": null,
+          "ShadowBias": 0.0005,
+          "ShadowCascadeCount": 4,
+          "ShadowCascadeSplitRatio": 0.91,
+          "ShadowHardness": 0,
+          "Shadows": true,
+          "SkyColor": "0,0,0,0",
+          "Visualizer": {}
+        }
+      ],
+      "Children": []
+    },
+    {
+      "__guid": "615297ee-c24c-45bc-b669-95b0ab8a310b",
+      "__version": 2,
+      "Flags": 0,
+      "Name": "Cube",
+      "Position": "0,0,100",
+      "Rotation": "0,0,0,1",
+      "Scale": "1,4.39661646,0.0579756722",
+      "Tags": "",
+      "Enabled": true,
+      "NetworkMode": 2,
+      "NetworkFlags": 0,
+      "NetworkOrphaned": 0,
+      "NetworkTransmit": true,
+      "OwnerTransfer": 1,
+      "Components": [
+        {
+          "__type": "Sandbox.ModelRenderer",
+          "__guid": "737598f0-e752-46fd-9645-424cf0f5729d",
+          "__enabled": true,
+          "Flags": 0,
+          "BodyGroups": 18446744073709551615,
+          "CreateAttachments": false,
+          "LodOverride": null,
+          "MaterialGroup": null,
+          "MaterialOverride": null,
+          "Materials": null,
+          "Model": "models/dev/box.vmdl",
+          "OnComponentDestroy": null,
+          "OnComponentDisabled": null,
+          "OnComponentEnabled": null,
+          "OnComponentFixedUpdate": null,
+          "OnComponentStart": null,
+          "OnComponentUpdate": null,
+          "RenderOptions": {
+            "GameLayer": true,
+            "OverlayLayer": false,
+            "BloomLayer": false,
+            "AfterUILayer": false
+          },
+          "RenderType": "On",
+          "Tint": "1,1,1,1"
+        },
+        {
+          "__type": "Sandbox.BoxCollider",
+          "__guid": "66bdc327-76cb-4807-b7c9-e2faef9eae53",
+          "__enabled": true,
+          "Flags": 0,
+          "Center": "0,0,0",
+          "ColliderFlags": 0,
+          "Elasticity": null,
+          "Friction": null,
+          "IsTrigger": false,
+          "OnComponentDestroy": null,
+          "OnComponentDisabled": null,
+          "OnComponentEnabled": null,
+          "OnComponentFixedUpdate": null,
+          "OnComponentStart": null,
+          "OnComponentUpdate": null,
+          "OnObjectTriggerEnter": null,
+          "OnObjectTriggerExit": null,
+          "OnTriggerEnter": null,
+          "OnTriggerExit": null,
+          "RollingResistance": null,
+          "Scale": "50,50,50",
+          "Static": false,
+          "Surface": null,
+          "SurfaceVelocity": "0,0,0"
+        }
+      ],
+      "Children": []
+    },
+    {
+      "__guid": "6f543954-3960-4999-bb2f-7d0c6ae47e8a",
+      "__version": 2,
+      "__Prefab": "prefabs/_player.prefab",
+      "__PrefabInstancePatch": {
+        "AddedObjects": [],
+        "RemovedObjects": [],
+        "PropertyOverrides": [
+          {
+            "Target": {
+              "Type": "GameObject",
+              "IdValue": "9b745388-274e-40f1-a011-8342c46da173"
+            },
+            "Property": "Position",
+            "Value": "-1.11721802,78.3617935,114.889389"
+          },
+          {
+            "Target": {
+              "Type": "GameObject",
+              "IdValue": "9b745388-274e-40f1-a011-8342c46da173"
+            },
+            "Property": "Rotation",
+            "Value": "0,0,0,0.99999994"
+          }
+        ],
+        "MovedObjects": []
+      },
+      "__PrefabIdToInstanceId": {
+        "9b745388-274e-40f1-a011-8342c46da173": "6f543954-3960-4999-bb2f-7d0c6ae47e8a",
+        "4b36eafa-238c-41be-9405-1076ef46738d": "8218ce9f-5c55-4814-b95a-3045b270f126",
+        "345c8bd5-319c-4fd1-808d-1d1eea886f7b": "0dc98f90-113a-4414-b828-f085c2069310",
+        "8f4fed25-b22d-443c-b0d9-e91c100c17e7": "ac41d2f1-4cb4-471e-ad7b-16e7437f2937",
+        "799c147b-c3d0-4198-8a2f-739c609d8258": "ce6f3da0-8dca-4c9b-8c26-7962cbcc5d20",
+        "73aad03d-b136-406d-aa17-2d7477537c6c": "24bfaac0-d3d6-4b81-a84c-260376e7cb69",
+        "8c69e88d-e0e3-4224-a737-d44b128e3f7c": "3ebf384c-7e26-470d-a35e-caabc36564a9",
+        "052dea86-723e-4a28-bd8a-c231ace5556d": "085469b0-6941-4084-a9a7-69487f399fe6",
+        "aaa9cdb8-d174-4ea8-bff6-5d1868c5fcdf": "3262426c-3db6-469e-a645-753bb30ef33e",
+        "37c25318-662a-4102-88e5-2d8426c0bb19": "c9021eb6-685e-434b-8efd-17389286006f",
+        "0fe096b2-279c-4c75-9991-46cfc8c22b88": "2ad597e8-a154-4b8c-8038-834c5c6c54c9",
+        "5a3b6455-828a-4c1f-a4f7-3ab2d1d15891": "ca84c282-1216-462a-a8fe-9fb7dc5bbdc2",
+        "cfc97102-8e42-471b-a8a4-0670f1b0bb20": "38baf5a6-5db8-4b5b-bd07-405fd215f2da",
+        "7be0f5fd-f733-43a0-802e-6df936bc861c": "bcabaaaa-c193-4d8f-a1f5-39a13ea934f4",
+        "11b8d10c-5d29-4745-bd26-c78c4d7742ed": "935f2450-93b8-40cc-b407-b781dd5abf80",
+        "6675c7d6-2cf2-4af2-a504-72eff048c4be": "79bec165-9829-4349-a6db-0451b977eba3",
+        "90ed77e2-2ef6-4d6a-a891-09e7595ee589": "3a9c8e15-439c-4b4d-925b-34320da25595",
+        "8863dc4d-6df2-4814-9b49-e5691e308063": "2400803f-3c88-48fa-b77e-752935adfeeb",
+        "8c99a8a9-3690-403b-8629-f9e44aceb92e": "9b60e740-4250-4f30-9182-d5121c92b03c",
+        "3e7ac5b9-babc-4417-b37e-1ccad8ca7d9a": "159ba365-ddde-4c88-82bc-d19062c32b3a",
+        "497f323f-e749-4f4c-90cf-600df4f03f9a": "7ba1e54b-cf05-4bfc-bb08-e8b0a8fdda29",
+        "6303169e-14a1-49fa-bce6-cb82dd64aa1b": "dfce214b-4989-4268-aa78-67d3c8ff8574",
+        "266a0660-0dbd-432d-9cfa-fdecfecb8193": "cbe6b84f-a8e4-47eb-a8b9-1f3832cda2cd",
+        "59509854-5ed7-475b-9941-d99515875148": "d44e5adf-477e-4f46-b6b1-f42de6e78d62",
+        "2efa766e-4994-4752-ac95-587971240c55": "9c352ebd-37cf-4d4e-b5f8-b5ea5d0c1b92",
+        "0d9afe3c-fa76-4eb2-9904-bdcc9c892cfc": "67694701-5081-4879-9a8b-09e9b18f6671",
+        "4123db6c-b1da-448c-9dba-05f885338fc2": "f34b093b-f70f-4213-a684-c389979d097c",
+        "fe3262ab-c469-460a-b813-eb53f4f94cc2": "b6a5e2e0-f27f-4bb1-ba5a-1cee835300c5",
+        "72269a93-7b7a-49ba-8ee4-61a3d870ce57": "82360b43-25a9-4928-ad71-104fac80fb8b"
+      }
+    },
+    {
+      "__guid": "8c21319b-5965-4cf6-b62b-6ef281c43c1a",
+      "__version": 2,
+      "Flags": 0,
+      "Name": "WeaponPickup",
+      "Position": "-3.14473724,-73.9299011,118.295837",
+      "Rotation": "0,0,0,1",
+      "Scale": "1,1,1",
+      "Tags": "",
+      "Enabled": true,
+      "NetworkMode": 2,
+      "NetworkFlags": 0,
+      "NetworkOrphaned": 0,
+      "NetworkTransmit": true,
+      "OwnerTransfer": 1,
+      "Components": [
+        {
+          "__type": "WeaponPickup",
+          "__guid": "f920bfeb-935e-4619-b26c-41ccbbdb2c99",
+          "__enabled": true,
+          "Flags": 0,
+          "BobAmplitude": 5,
+          "BobSpeed": 2,
+          "OnComponentDestroy": null,
+          "OnComponentDisabled": null,
+          "OnComponentEnabled": null,
+          "OnComponentFixedUpdate": null,
+          "OnComponentStart": null,
+          "OnComponentUpdate": null,
+          "PickupRadius": 40,
+          "RespawnTime": 15,
+          "WeaponPrefab": {
+            "_type": "gameobject",
+            "prefab": "prefabs/weapons/weapon_ar15.prefab"
+          }
+        }
+      ],
+      "Children": []
+    },
+    {
+      "__guid": "f59d388a-5cb5-4ff5-890a-e05e213e3847",
+      "__version": 2,
+      "Flags": 0,
+      "Name": "SpawnPoint",
+      "Position": "-4.12356949,-1.15820312,114.661674",
+      "Rotation": "0,0,0,1",
+      "Scale": "1,1,1",
+      "Tags": "",
+      "Enabled": true,
+      "NetworkMode": 2,
+      "NetworkFlags": 0,
+      "NetworkOrphaned": 0,
+      "NetworkTransmit": true,
+      "OwnerTransfer": 1,
+      "Components": [
+        {
+          "__type": "SpawnPoint",
+          "__guid": "6c8407f4-e50b-4325-86a0-00dea4e46dc7",
+          "__enabled": true,
+          "Flags": 0,
+          "OnComponentDestroy": null,
+          "OnComponentDisabled": null,
+          "OnComponentEnabled": null,
+          "OnComponentFixedUpdate": null,
+          "OnComponentStart": null,
+          "OnComponentUpdate": null
+        }
+      ],
+      "Children": []
+    }
+  ],
+  "SceneProperties": {
+    "NetworkInterpolation": true,
+    "TimeScale": 1,
+    "WantsSystemScene": true,
+    "Metadata": {},
+    "NavMesh": {
+      "Enabled": false,
+      "IncludeStaticBodies": true,
+      "IncludeKeyframedBodies": true,
+      "EditorAutoUpdate": false,
+      "AgentHeight": 64,
+      "AgentRadius": 16,
+      "AgentStepSize": 18,
+      "AgentMaxSlope": 40,
+      "ExcludedBodies": "",
+      "IncludedBodies": "",
+      "DeferGeneration": false,
+      "CustomBounds": false
+    },
+    "GameObjectSystems": {
+      "Sandbox.MovieMaker.MovieRecorderSystem": {
+        "DisableClientRecording": false
+      },
+      "Sandbox.SelectionSetsSystem": {
+        "Data": {
+          "SelectionSets": []
+        }
+      }
+    }
+  },
+  "ResourceVersion": 3,
+  "Title": null,
+  "Description": null,
+  "__references": [],
+  "__version": 3
+}

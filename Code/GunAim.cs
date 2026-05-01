@@ -8,6 +8,7 @@ public sealed class GunAim : Component
 
 	// The aim direction on the YZ plane, used by Shoot
 	public Vector3 AimDir { get; private set; } = new Vector3( 0f, 1f, 0f );
+	public Angles RotationOffset { get; set; } = Angles.Zero;
 
 	protected override void OnUpdate()
 	{
@@ -28,8 +29,8 @@ public sealed class GunAim : Component
 		if ( delta.LengthSquared > 100f )
 			AimDir = delta.Normal;
 
-		// Rotate so the barrel points outward (away from player)
-		WorldRotation = Rotation.LookAt( AimDir, Vector3.Up );
+		// Rotate so the barrel points outward, applying per-weapon offset
+		WorldRotation = Rotation.LookAt( AimDir, Vector3.Up ) * RotationOffset.ToRotation();
 
 		// Place pivot on the circle
 		WorldPosition = center + AimDir * OrbitRadius;
