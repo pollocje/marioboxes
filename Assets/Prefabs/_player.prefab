@@ -150,6 +150,24 @@
         "OnComponentStart": null,
         "OnComponentUpdate": null,
         "RespawnDelay": 3
+      },
+      {
+        "__type": "GrapplingHook",
+        "__guid": "689c1f55-512e-48ea-9d5c-434aaacc0c33",
+        "__enabled": true,
+        "Flags": 0,
+        "HookSpeed": 1500,
+        "MaxRopeLength": 400,
+        "OnComponentDestroy": null,
+        "OnComponentDisabled": null,
+        "OnComponentEnabled": null,
+        "OnComponentFixedUpdate": null,
+        "OnComponentStart": null,
+        "OnComponentUpdate": null,
+        "PlayerCenter": {
+          "_type": "gameobject",
+          "go": "cfc97102-8e42-471b-a8a4-0670f1b0bb20"
+        }
       }
     ],
     "Children": [
@@ -542,6 +560,114 @@
             "OnComponentFixedUpdate": null,
             "OnComponentStart": null,
             "OnComponentUpdate": null
+          }
+        ],
+        "Children": []
+      },
+      {
+        "__guid": "12f164b1-3458-4d43-b4bd-89a4ef60ee95",
+        "__version": 2,
+        "Flags": 0,
+        "Name": "Rope",
+        "Position": "0,0,0",
+        "Rotation": "0,0,0,1",
+        "Scale": "1,1,1",
+        "Tags": "",
+        "Enabled": true,
+        "NetworkMode": 2,
+        "NetworkFlags": 0,
+        "NetworkOrphaned": 0,
+        "NetworkTransmit": true,
+        "OwnerTransfer": 1,
+        "Components": [
+          {
+            "__type": "Sandbox.LineRenderer",
+            "__guid": "50efe721-fc81-4d8a-8a65-d51331cd3dca",
+            "__enabled": true,
+            "Flags": 0,
+            "Additive": false,
+            "AutoCalculateNormals": true,
+            "CastShadows": true,
+            "Color": {
+              "blend": "Linear",
+              "color": [
+                {
+                  "t": 0,
+                  "c": "0.5451,0,0,1"
+                },
+                {
+                  "t": 1,
+                  "c": "0.5451,0,0,1"
+                },
+                {
+                  "t": 1,
+                  "c": "1,0.64706,0,1"
+                },
+                {
+                  "t": 1,
+                  "c": "1,1,0,1"
+                }
+              ],
+              "alpha": [
+                {
+                  "t": 0,
+                  "a": 1
+                },
+                {
+                  "t": 1,
+                  "a": 1
+                }
+              ]
+            },
+            "CylinderSegments": 12,
+            "DepthFeather": 0,
+            "EndCap": "None",
+            "Face": "Camera",
+            "FogStrength": 1,
+            "Lighting": false,
+            "OnComponentDestroy": null,
+            "OnComponentDisabled": null,
+            "OnComponentEnabled": null,
+            "OnComponentFixedUpdate": null,
+            "OnComponentStart": null,
+            "OnComponentUpdate": null,
+            "Opaque": true,
+            "Points": [],
+            "RenderOptions": {
+              "GameLayer": true,
+              "OverlayLayer": false,
+              "BloomLayer": false,
+              "AfterUILayer": false
+            },
+            "SplineBias": 0,
+            "SplineContinuity": 0,
+            "SplineInterpolation": 0,
+            "SplineTension": 0,
+            "StartCap": "None",
+            "Texturing": {
+              "Texture": null,
+              "Material": null,
+              "WorldSpace": true,
+              "UnitsPerTexture": 10,
+              "Scale": 1,
+              "Offset": 0,
+              "Scroll": 0,
+              "FilterMode": "Anisotropic",
+              "TextureAddressMode": "Wrap",
+              "Clamp": false
+            },
+            "UseVectorPoints": true,
+            "VectorPoints": [],
+            "Width": [
+              {
+                "x": 0.4945603,
+                "y": 0.4991095,
+                "in": 0,
+                "out": 0,
+                "mode": "Mirrored"
+              }
+            ],
+            "Wireframe": false
           }
         ],
         "Children": []

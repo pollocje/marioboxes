@@ -7,12 +7,14 @@ public sealed class Movement : Component
 	[Property] public float AirRollSpeed { get; set; } = 6f; // radians/sec
 
 	private Rigidbody _rb;
+	private GrapplingHook _grapple;
 	private bool _isGrounded;
 	private bool _wasGrounded;
 
 	protected override void OnStart()
 	{
 		_rb = Components.Get<Rigidbody>();
+		_grapple = Components.Get<GrapplingHook>();
 	}
 
 	protected override void OnFixedUpdate()
@@ -42,6 +44,14 @@ public sealed class Movement : Component
 
 		var vel = _rb.Velocity;
 		vel.x = 0f; // lock depth axis
+
+		// While hooked: add input as a force so it combines with swing/pull velocity
+		if ( _grapple is not null && _grapple.IsHooked )
+		{
+			vel.y += input * MoveSpeed * Time.Delta;
+			_rb.Velocity = vel;
+			return;
+		}
 
 		vel.y = input * MoveSpeed;
 

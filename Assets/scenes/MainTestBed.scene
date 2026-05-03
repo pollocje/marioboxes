@@ -115,6 +115,78 @@
       "Children": []
     },
     {
+      "__guid": "32fadd26-c20f-4ae7-af8f-a202344e1e79",
+      "__version": 2,
+      "Flags": 0,
+      "Name": "Cube (1)",
+      "Position": "0,-226.134155,213.922363",
+      "Rotation": "0,0,0,1",
+      "Scale": "1,4.39661646,0.0579756722",
+      "Tags": "",
+      "Enabled": true,
+      "NetworkMode": 2,
+      "NetworkFlags": 0,
+      "NetworkOrphaned": 0,
+      "NetworkTransmit": true,
+      "OwnerTransfer": 1,
+      "Components": [
+        {
+          "__type": "Sandbox.ModelRenderer",
+          "__guid": "d0adf10d-46db-409d-8451-5664b73c59d2",
+          "__enabled": true,
+          "Flags": 0,
+          "BodyGroups": 18446744073709551615,
+          "CreateAttachments": false,
+          "LodOverride": null,
+          "MaterialGroup": null,
+          "MaterialOverride": null,
+          "Materials": null,
+          "Model": "models/dev/box.vmdl",
+          "OnComponentDestroy": null,
+          "OnComponentDisabled": null,
+          "OnComponentEnabled": null,
+          "OnComponentFixedUpdate": null,
+          "OnComponentStart": null,
+          "OnComponentUpdate": null,
+          "RenderOptions": {
+            "GameLayer": true,
+            "OverlayLayer": false,
+            "BloomLayer": false,
+            "AfterUILayer": false
+          },
+          "RenderType": "On",
+          "Tint": "1,1,1,1"
+        },
+        {
+          "__type": "Sandbox.BoxCollider",
+          "__guid": "f9b17b6a-57c5-49d9-91d3-2abbd1ef16e9",
+          "__enabled": true,
+          "Flags": 0,
+          "Center": "0,0,0",
+          "ColliderFlags": 0,
+          "Elasticity": null,
+          "Friction": null,
+          "IsTrigger": false,
+          "OnComponentDestroy": null,
+          "OnComponentDisabled": null,
+          "OnComponentEnabled": null,
+          "OnComponentFixedUpdate": null,
+          "OnComponentStart": null,
+          "OnComponentUpdate": null,
+          "OnObjectTriggerEnter": null,
+          "OnObjectTriggerExit": null,
+          "OnTriggerEnter": null,
+          "OnTriggerExit": null,
+          "RollingResistance": null,
+          "Scale": "50,50,50",
+          "Static": false,
+          "Surface": null,
+          "SurfaceVelocity": "0,0,0"
+        }
+      ],
+      "Children": []
+    },
+    {
       "__guid": "6f543954-3960-4999-bb2f-7d0c6ae47e8a",
       "__version": 2,
       "__Prefab": "prefabs/_player.prefab",
@@ -137,6 +209,14 @@
             },
             "Property": "Rotation",
             "Value": "0,0,0,0.99999994"
+          },
+          {
+            "Target": {
+              "Type": "Component",
+              "IdValue": "689c1f55-512e-48ea-9d5c-434aaacc0c33"
+            },
+            "Property": "HookPullForce",
+            "Value": 350
           }
         ],
         "MovedObjects": []
@@ -170,7 +250,10 @@
         "0d9afe3c-fa76-4eb2-9904-bdcc9c892cfc": "67694701-5081-4879-9a8b-09e9b18f6671",
         "4123db6c-b1da-448c-9dba-05f885338fc2": "f34b093b-f70f-4213-a684-c389979d097c",
         "fe3262ab-c469-460a-b813-eb53f4f94cc2": "b6a5e2e0-f27f-4bb1-ba5a-1cee835300c5",
-        "72269a93-7b7a-49ba-8ee4-61a3d870ce57": "82360b43-25a9-4928-ad71-104fac80fb8b"
+        "72269a93-7b7a-49ba-8ee4-61a3d870ce57": "82360b43-25a9-4928-ad71-104fac80fb8b",
+        "689c1f55-512e-48ea-9d5c-434aaacc0c33": "c72cd9ae-ae39-43a8-9425-8722be8d4718",
+        "12f164b1-3458-4d43-b4bd-89a4ef60ee95": "fd8bfff6-6fae-40f9-95a9-713ba1619133",
+        "50efe721-fc81-4d8a-8a65-d51331cd3dca": "b053e952-fdb3-46be-a602-608648dfaefe"
       }
     },
     {
@@ -266,6 +349,11 @@
     "GameObjectSystems": {
       "Sandbox.MovieMaker.MovieRecorderSystem": {
         "DisableClientRecording": false
+      },
+      "Sandbox.Clutter.ClutterGridSystem": {
+        "Storage": {
+          "$blob": "8430fe5f-a8c0-426a-9251-c0862412a1d0"
+        }
       },
       "Sandbox.SelectionSetsSystem": {
         "Data": {
