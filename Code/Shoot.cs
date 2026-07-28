@@ -44,6 +44,7 @@ public sealed class Shoot : Component
 	{
 		if ( IsProxy ) return;
 		if ( BulletPrefab is null || _gunAim?.BarrelTip is null ) return;
+		if ( RoundManager.Instance is not null && RoundManager.Instance.RoundOver ) return;
 
 		if ( IsReloading )
 		{

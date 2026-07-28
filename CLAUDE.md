@@ -49,14 +49,16 @@ machine.
 - **Movement**: stays owner-authoritative, unchanged. Relies on S&Box's built-in
   networked-transform sync/interpolation for proxies to see other players move —
   **not independently verified this session**, see checklist.
-- **Health/damage**: `[Sync] public float Current`. `TakeDamage` is
-  `[Rpc.Owner]` — any client can call it (the shooter does, from `Bullet.cs`),
-  but the method body only executes on the connection that *owns* the target,
-  so HP is always mutated exactly once, by the victim's own machine, and
-  replicates out from there. This is **not cheat-proof** (it trusts whichever
-  client detected the hit) — it was chosen to match the existing
-  owner-authoritative pattern rather than introduce host-authority everywhere.
-  A host-validated hit-confirm pass is a reasonable future hardening step.
+- **Health/damage**: `[Sync] public float Current`. `TakeDamage(float amount,
+  GameObject attacker)` is `[Rpc.Owner]` — any client can call it (the shooter
+  does, from `Bullet.cs`, passing its `Source`), but the method body only
+  executes on the connection that *owns* the target, so HP is always mutated
+  exactly once, by the victim's own machine, and replicates out from there.
+  This is **not cheat-proof** (it trusts whichever client detected the hit) —
+  it was chosen to match the existing owner-authoritative pattern rather than
+  introduce host-authority everywhere. A host-validated hit-confirm pass is a
+  reasonable future hardening step. `attacker` is also used for friendly-fire
+  checking and kill-credit — see the Team Deathmatch section below.
 - **Weapons**: equipped weapon is synced as a **string ID** (the prefab's
   `Name`), not a GameObject reference — raw prefab/asset references can't be
   synced, only spawned networked GameObjects can. `WeaponHolder.Equip()` now
@@ -92,14 +94,69 @@ machine.
   `Component.INetworkListener.OnActive(Connection)` — clones the player prefab
   at a random `SpawnPoint` and calls `.NetworkSpawn(channel)`.
 
-### Files touched
+### Files touched (networking pass)
 
 - New: `Code/PlayerSpawner.cs`
 - Rewritten: `Code/Health.cs`, `Code/WeaponHolder.cs`, `Code/WeaponPickup.cs`,
   `Code/GrapplingHook.cs`
 - Edited: `Code/Bullet.cs` (added `IsCosmetic`), `Code/Shoot.cs` (split
   `FireEffects`/`PlayReloadSound` out as broadcast RPCs)
-- Untouched: everything else in `Code/`
+
+## Gamemode: 5v5 Team Deathmatch (this session)
+
+Win condition, chosen deliberately over the alternatives (timed-most-kills,
+last-player-standing): **first team to 50 kills wins**, with a 15-minute match
+time limit as a backstop (whoever's ahead when time runs out wins; a tie is a
+draw). No elimination — death still respawns via the existing `Health` loop,
+just now filtered to the player's own team's `SpawnPoint`s.
+
+### New pieces
+
+- **`Team.cs`** — `enum Team { Unassigned, Red, Blue }`.
+- **`TeamMember.cs`** — lives on the player prefab. `[Sync(SyncFlags.FromHost)]
+  public Team Team` — host-authoritative so players can't assign/change their
+  own team.
+- **`RoundManager.cs`** — one instance, placed in the scene (not
+  `NetworkSpawn`'d — same "pre-placed scene object" assumption as
+  `WeaponPickup`, see checklist). Host-authoritative `[Sync(SyncFlags.FromHost)]`
+  score/timer/winner state. Exposes `[Rpc.Host] ReportKill(Team attackerTeam,
+  Team victimTeam)`, called from `Health` on a kill — runs only on host so a
+  kill is counted exactly once no matter which client's `Health` (i.e. which
+  victim's owner) reports it. Handles the win check, the time-limit backstop,
+  and a 10s intermission before auto-resetting scores for the next round.
+- **`PlayerSpawner.cs`** — now balances each joiner onto whichever team has
+  fewer players (`PickBalancedTeam`), and only picks among that team's
+  `SpawnPoint`s (falling back to `Team.Unassigned` spawns if none exist).
+- **`SpawnPoint.cs`** — added a `[Property] public Team Team` so spawns can be
+  assigned to a side; unassigned spawns are usable by either team.
+- **`Health.cs`** — `TakeDamage` now takes `attacker`, checks it against
+  `TeamMember.Team` to skip damage when `FriendlyFire` is off (default) and
+  attacker/victim share a team, calls `RoundManager.ReportKill` on a kill, and
+  skips damage entirely once `RoundManager.RoundOver` is true. Respawn now
+  filters `SpawnPoint`s by the player's own team.
+- **`Shoot.cs`** — stops firing while `RoundManager.RoundOver` is true, so
+  nobody keeps shooting (and spamming broadcast RPCs) during intermission.
+
+### Known simplifications / not done
+
+- **5v5 isn't hard-capped.** `PlayerSpawner` balances team *counts* but won't
+  refuse a 6th player onto a team or queue anyone as a spectator. Fine for
+  testing, needs a real cap + spectator/queue flow for a real 10-player match.
+- **No scoreboard/HUD.** `RoundManager.RedScore`/`BlueScore`/`TimeRemaining`/
+  `WinningTeam` are all there to bind to, but no `.razor` UI reads them yet —
+  next logical step once the above compiles and networks correctly.
+- **No individual kill/death tracking**, only team totals — fine for the win
+  condition, but a per-player killfeed would need more.
+- **Movement isn't frozen during intermission** — players can still run
+  around, they just can't deal or take damage. Intentional simplification, not
+  a bug — flag if you want a hard freeze instead.
+
+### Files touched (gamemode pass)
+
+- New: `Code/Team.cs`, `Code/TeamMember.cs`, `Code/RoundManager.cs`
+- Edited: `Code/PlayerSpawner.cs`, `Code/SpawnPoint.cs`, `Code/Health.cs`,
+  `Code/Bullet.cs` (passes `Source` into `TakeDamage`), `Code/Shoot.cs`
+  (round-over guard)
 
 ## TODO — wiring this up at home
 
@@ -117,6 +174,16 @@ machine.
 - [ ] Double check `_player.prefab`'s existing component wiring (`GunAim.
       PlayerCenter`/`BarrelTip`, `GrapplingHook.PlayerCenter`, etc.) — none of
       that was visible from this sparse checkout, only inferred from the C#.
+- [ ] Add a `TeamMember` component to `_player.prefab` — `PlayerSpawner` and
+      `Health` both do `Components.Get<TeamMember>()` and quietly no-op /
+      treat the player as `Team.Unassigned` if it's missing, so this will fail
+      silently (no team assignment, no friendly-fire protection) rather than
+      crash if forgotten.
+- [ ] Add a `RoundManager` GameObject to the scene (one instance).
+- [ ] Set `Team` on each `SpawnPoint` in the arena — split them Red/Blue so
+      teams don't spawn on top of each other. Currently every existing
+      `SpawnPoint` defaults to `Team.Unassigned`, which both teams will use as
+      a fallback — fine for a first test, not what you want for a real match.
 
 **Verify against current S&Box docs — API surface I used with moderate-to-high
 but not certain confidence, since s&box's networking API has shifted before:**
@@ -134,6 +201,15 @@ but not certain confidence, since s&box's networking API has shifted before:**
 - [ ] Whether networked Rigidbody transform sync/interpolation for proxies is
       automatic, or needs an explicit opt-in on the player prefab —
       `Movement.cs` wasn't changed on the assumption this is automatic.
+- [ ] `[Sync(SyncFlags.FromHost)]` — exact attribute/flag name for
+      host-authoritative sync (used throughout `TeamMember` and
+      `RoundManager`). This is the item I'm least certain of syntactically.
+- [ ] `[Rpc.Host]` — same pattern as `[Rpc.Owner]` but targeting the host;
+      used by `RoundManager.ReportKill`.
+- [ ] Whether an RPC parameter can carry a `GameObject` reference (used by
+      `Health.TakeDamage(float, GameObject attacker)`) — should work since the
+      referenced object is itself networked via `NetworkSpawn`, but wasn't
+      verified.
 
 **Test plan once it compiles:**
 
@@ -149,9 +225,14 @@ but not certain confidence, since s&box's networking API has shifted before:**
     client's copy of the pickup disappears too.
   - Grappling hook: swinging shows the rope on *both* the swinger's screen and
     the other client's screen.
+  - Teams: joiners alternate/balance Red vs Blue; each spawns at their own
+    team's spawn points; shooting a teammate does nothing (with `FriendlyFire`
+    off); shooting an enemy counts toward that enemy's team score; reaching 50
+    kills ends the round and, after 10s, a new one starts with scores reset.
 
-## Not yet started — gamemode logic
+## Not yet started
 
-No round timer, win condition, scoring, or team system exists yet at all. This
-session was scoped to *networking what already exists*; the gamemode loop
-itself is the next piece of work once the above is verified working.
+- **Scoreboard/timer HUD** — `RoundManager`'s synced state is ready to bind to,
+  no `.razor` UI built yet.
+- **Hard 5v5 cap / spectator queue** — see "Known simplifications" above.
+- **Per-player kill/death tracking** — only team totals exist right now.

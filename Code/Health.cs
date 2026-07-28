@@ -4,6 +4,7 @@ public sealed class Health : Component
 {
 	[Property] public float MaxHealth { get; set; } = 100f;
 	[Property] public float RespawnDelay { get; set; } = 3f;
+	[Property] public bool FriendlyFire { get; set; } = false;
 
 	// Synced from this object's owner — the victim is authoritative over their own HP,
 	// matching the owner-authoritative pattern the rest of the project uses (see Movement).
@@ -12,20 +13,31 @@ public sealed class Health : Component
 
 	private RealTimeSince _deathTime;
 	private bool _lastVisible = true;
+	private TeamMember _team;
 
 	protected override void OnStart()
 	{
+		_team = Components.Get<TeamMember>();
+
 		if ( !IsProxy )
 			Current = MaxHealth;
 	}
 
 	// Any client can call this (e.g. the shooter that detected a hit), but the body only ever
 	// runs on the connection that owns this Health — so HP mutation always happens exactly once,
-	// on the victim's machine, and replicates out from there via [Sync].
+	// on the victim's machine, and replicates out from there via [Sync]. `attacker` is the
+	// shooter's player GameObject (see Bullet.Source) — used for friendly fire and kill credit.
 	[Rpc.Owner]
-	public void TakeDamage( float amount )
+	public void TakeDamage( float amount, GameObject attacker )
 	{
 		if ( Current <= 0f || IsDead ) return;
+		if ( RoundManager.Instance is not null && RoundManager.Instance.RoundOver ) return;
+
+		var myTeam = _team?.Team ?? Team.Unassigned;
+		var attackerTeam = attacker?.Components.Get<TeamMember>()?.Team ?? Team.Unassigned;
+
+		if ( !FriendlyFire && myTeam != Team.Unassigned && attackerTeam == myTeam )
+			return;
 
 		Current -= amount;
 
@@ -34,6 +46,8 @@ public sealed class Health : Component
 			Current = 0f;
 			IsDead = true;
 			_deathTime = 0;
+
+			RoundManager.Instance?.ReportKill( attackerTeam, myTeam );
 		}
 	}
 
@@ -51,7 +65,13 @@ public sealed class Health : Component
 		if ( !IsDead ) return;
 		if ( _deathTime < RespawnDelay ) return;
 
-		var spawnPoints = Scene.GetAllComponents<SpawnPoint>().ToList();
+		var myTeam = _team?.Team ?? Team.Unassigned;
+		var spawnPoints = Scene.GetAllComponents<SpawnPoint>()
+			.Where( sp => sp.Team == myTeam || sp.Team == Team.Unassigned )
+			.ToList();
+		if ( spawnPoints.Count == 0 )
+			spawnPoints = Scene.GetAllComponents<SpawnPoint>().ToList();
+
 		if ( spawnPoints.Count > 0 )
 		{
 			var spawnPoint = spawnPoints[Game.Random.Int( spawnPoints.Count - 1 )];

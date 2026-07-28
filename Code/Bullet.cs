@@ -45,7 +45,7 @@ public sealed class Bullet : Component
 			{
 				var health = tr.GameObject.Components.Get<Health>()
 					?? tr.GameObject.Components.GetInParent<Health>();
-				health?.TakeDamage( Damage ); // routes through Health's [Rpc.Owner] — resolves on the victim's machine
+				health?.TakeDamage( Damage, Source ); // routes through Health's [Rpc.Owner] — resolves on the victim's machine
 				GameObject.Destroy();
 				return;
 			}
