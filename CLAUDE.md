@@ -183,6 +183,43 @@ just now filtered to the player's own team's `SpawnPoint`s.
   `Code/Health.cs` (passes attacker/victim into `ReportKill`, warmup guard),
   `Code/Shoot.cs` (warmup guard)
 
+## Spawn protection, overtime, disconnect handling (this session, second follow-up)
+
+- **Spawn protection** — `Health.cs` gained `SpawnProtectionDuration` (default
+  2s) and a local `RealTimeSince` timer, checked in `TakeDamage` right after
+  the round-state checks. Starts on `OnStart` and resets on every respawn.
+  Not synced — it's checked in the same owner-only `TakeDamage` path that
+  already decides everything else about the victim's HP, so there's no reason
+  for anyone else to need it. Firing your own weapon clears it early
+  (`Health.ClearSpawnProtection()`, called from `Shoot.Fire()`) — standard
+  "protection ends the moment you take an offensive action" convention, stops
+  it being used as a free-damage window.
+- **Overtime** — replaces the old "tied at the time limit = draw" behavior.
+  New `[Sync(SyncFlags.FromHost)] bool Overtime`. When `TimeRemaining` hits
+  zero: if scores differ, round ends immediately as before; if tied, `Overtime`
+  goes true instead — the countdown stops entirely and `ReportKill` short-
+  circuits to `EndRound` on the *first* kill by either team, regardless of
+  `KillsToWin`. `Health`/`Shoot` don't need to know about `Overtime` — combat
+  keeps working exactly as it does in a normal round, `ReportKill` is just the
+  one place that now treats "any kill" as the win condition while it's active.
+- **Disconnect handling** — deliberately *not* built on
+  `INetworkListener.OnDisconnected`. Whether a leaving player's `TeamMember`
+  is destroyed before or after that callback fires isn't something I could
+  verify from this sparse checkout, and getting that ordering wrong would mean
+  either double-counting or missing the disconnect entirely. Instead
+  `RoundManager.OnUpdate` polls both teams' live counts every frame (right
+  next to the existing warmup check, same cost) during an active round: if one
+  team hits zero, the other wins immediately; if both hit zero (everyone
+  left), it calls `StartNewRound()` — full reset back to warmup rather than
+  "ending" a round nobody's playing. This also means a round that never had
+  players on both sides can't get stuck.
+
+### Files touched (this follow-up)
+
+- Edited: `Code/Health.cs` (spawn protection), `Code/Shoot.cs`
+  (`ClearSpawnProtection` on fire), `Code/RoundManager.cs` (`Overtime` state,
+  per-team disconnect polling)
+
 ## TODO — wiring this up at home
 
 **Scene/prefab wiring (needs the editor, can't be done from Code/ alone):**
@@ -238,6 +275,9 @@ but not certain confidence, since s&box's networking API has shifted before:**
       `Health.TakeDamage(float, GameObject attacker)`) — should work since the
       referenced object is itself networked via `NetworkSpawn`, but wasn't
       verified.
+- [ ] Whether `Scene.GetAllComponents<TeamMember>()` reflects a disconnected
+      player's departure immediately or with a frame or two of lag — affects
+      how snappy `RoundManager`'s empty-team detection actually is in practice.
 
 **Test plan once it compiles:**
 
@@ -264,15 +304,20 @@ but not certain confidence, since s&box's networking API has shifted before:**
   - Stats: killing an enemy increments the killer's `PlayerStats.Kills` and
     the victim's `Deaths`; team-kills and unattributed deaths still increment
     `Deaths` but never `Kills`.
+  - Spawn protection: immediately after respawning, take fire from an enemy —
+    confirm no damage applies. Fire your own weapon, then take fire again —
+    confirm damage now applies normally.
+  - Overtime: force a tied score at the time limit (or temporarily lower
+    `MatchTimeLimit`/`KillsToWin` for testing) and confirm `Overtime` goes
+    true, the timer stops, and the very next kill (by either team) ends the
+    round instead of requiring `KillsToWin`.
+  - Disconnect: with two clients in an active round, disconnect one — confirm
+    the round ends in favor of the remaining team within roughly a frame or
+    two. Disconnect both — confirm it resets to `WarmingUp` instead of
+    leaving a stale `RoundOver`/score state.
 
 ## Not yet started
 
 - **Scoreboard/timer HUD** — `RoundManager` and `PlayerStats`' synced state is
   ready to bind to, no `.razor` UI built yet (deliberately deferred).
 - **Hard 5v5 cap / spectator queue** — see "Known simplifications" above.
-- **Spawn protection** — no post-respawn invulnerability window yet.
-- **Overtime on a timed tie** — currently just ends in a draw.
-- **Explicit disconnect handling** — nothing currently reacts when a player
-  leaves mid-round (team counts/`RoundManager` should still end up correct
-  once their networked objects are cleaned up, but this hasn't been reasoned
-  through carefully or tested).

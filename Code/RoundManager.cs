@@ -2,7 +2,8 @@ using Sandbox;
 
 // Host-authoritative round state for 5v5 Team Deathmatch. Place once in the scene.
 // Win condition is first team to KillsToWin; MatchTimeLimit is a backstop so a round
-// can't run forever if nobody gets there — whoever's ahead when time runs out wins.
+// can't run forever if nobody gets there — tied at the backstop goes to Overtime
+// (sudden death) instead of ending in a draw.
 public sealed class RoundManager : Component
 {
 	[Property] public int KillsToWin { get; set; } = 50;
@@ -21,6 +22,7 @@ public sealed class RoundManager : Component
 	[Sync( SyncFlags.FromHost )] public float TimeRemaining { get; private set; }
 	[Sync( SyncFlags.FromHost )] public bool RoundOver { get; private set; }
 	[Sync( SyncFlags.FromHost )] public bool WarmingUp { get; private set; } = true;
+	[Sync( SyncFlags.FromHost )] public bool Overtime { get; private set; }
 	[Sync( SyncFlags.FromHost )] public Team WinningTeam { get; private set; } = Team.Unassigned;
 
 	private RealTimeSince _roundOverAt;
@@ -49,12 +51,33 @@ public sealed class RoundManager : Component
 			return;
 		}
 
+		// A team disconnecting down to nobody mid-round ends it early, rather than the other
+		// team grinding out an uncontested win or Overtime waiting forever for a kill that can
+		// never come. Polled here every frame instead of hooking a join/leave callback because
+		// it isn't clear from this checkout whether a disconnecting player's TeamMember is
+		// destroyed before or after such a callback fires — polling doesn't depend on that
+		// ordering at all, and this loop already runs every frame for the warmup check above.
+		int redCount = CountTeam( Team.Red );
+		int blueCount = CountTeam( Team.Blue );
+		if ( redCount == 0 || blueCount == 0 )
+		{
+			if ( redCount == 0 && blueCount == 0 )
+				StartNewRound(); // nobody left at all — don't "end" a round no one's playing, just reset
+			else
+				EndRound( redCount > 0 ? Team.Red : Team.Blue );
+			return;
+		}
+
+		if ( Overtime ) return; // sudden death — no clock, waiting on ReportKill to end it
+
 		TimeRemaining -= Time.Delta;
 		if ( TimeRemaining <= 0f )
 		{
 			TimeRemaining = 0f;
-			var leader = RedScore == BlueScore ? Team.Unassigned : ( RedScore > BlueScore ? Team.Red : Team.Blue );
-			EndRound( leader );
+			if ( RedScore == BlueScore )
+				Overtime = true;
+			else
+				EndRound( RedScore > BlueScore ? Team.Red : Team.Blue );
 		}
 	}
 
@@ -80,19 +103,31 @@ public sealed class RoundManager : Component
 		if ( attackerTeam == Team.Red ) RedScore++;
 		else if ( attackerTeam == Team.Blue ) BlueScore++;
 
+		if ( Overtime )
+		{
+			EndRound( attackerTeam ); // sudden death — the first kill in overtime wins outright
+			return;
+		}
+
 		if ( RedScore >= KillsToWin ) EndRound( Team.Red );
 		else if ( BlueScore >= KillsToWin ) EndRound( Team.Blue );
 	}
 
+	private int CountTeam( Team team )
+	{
+		return Scene.GetAllComponents<TeamMember>().Count( t => t.Team == team );
+	}
+
 	private int CountConnectedPlayers()
 	{
-		return Scene.GetAllComponents<TeamMember>().Count( t => t.Team != Team.Unassigned );
+		return CountTeam( Team.Red ) + CountTeam( Team.Blue );
 	}
 
 	private void EndRound( Team winner )
 	{
 		WinningTeam = winner;
 		RoundOver = true;
+		Overtime = false;
 		_roundOverAt = 0;
 	}
 
@@ -103,6 +138,7 @@ public sealed class RoundManager : Component
 		TimeRemaining = MatchTimeLimit;
 		WinningTeam = Team.Unassigned;
 		RoundOver = false;
+		Overtime = false;
 		WarmingUp = CountConnectedPlayers() < MinPlayersToStart;
 	}
 }

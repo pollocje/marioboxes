@@ -68,6 +68,9 @@ public sealed class Shoot : Component
 		var aimDir = _gunAim.AimDir;
 		var barrelPos = _gunAim.BarrelTip.WorldPosition;
 
+		// Firing forfeits spawn protection — see Health.ClearSpawnProtection.
+		GameObject.Parent?.Components.Get<Health>()?.ClearSpawnProtection();
+
 		// Authoritative bullet — only ever exists on this client. It resolves the hit and deals
 		// damage; see Bullet.IsCosmetic for why other clients get a separate, non-authoritative copy.
 		var bullet = BulletPrefab.Clone( barrelPos );

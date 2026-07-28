@@ -5,6 +5,7 @@ public sealed class Health : Component
 	[Property] public float MaxHealth { get; set; } = 100f;
 	[Property] public float RespawnDelay { get; set; } = 3f;
 	[Property] public bool FriendlyFire { get; set; } = false;
+	[Property] public float SpawnProtectionDuration { get; set; } = 2f;
 
 	// Synced from this object's owner — the victim is authoritative over their own HP,
 	// matching the owner-authoritative pattern the rest of the project uses (see Movement).
@@ -12,12 +13,14 @@ public sealed class Health : Component
 	[Sync] private bool IsDead { get; set; }
 
 	private RealTimeSince _deathTime;
+	private RealTimeSince _spawnProtectionStart;
 	private bool _lastVisible = true;
 	private TeamMember _team;
 
 	protected override void OnStart()
 	{
 		_team = Components.Get<TeamMember>();
+		_spawnProtectionStart = 0;
 
 		if ( !IsProxy )
 			Current = MaxHealth;
@@ -32,6 +35,7 @@ public sealed class Health : Component
 	{
 		if ( Current <= 0f || IsDead ) return;
 		if ( RoundManager.Instance is not null && ( RoundManager.Instance.RoundOver || RoundManager.Instance.WarmingUp ) ) return;
+		if ( _spawnProtectionStart < SpawnProtectionDuration ) return;
 
 		var myTeam = _team?.Team ?? Team.Unassigned;
 		var attackerTeam = attacker?.Components.Get<TeamMember>()?.Team ?? Team.Unassigned;
@@ -49,6 +53,13 @@ public sealed class Health : Component
 
 			RoundManager.Instance?.ReportKill( attackerTeam, myTeam, attacker, GameObject );
 		}
+	}
+
+	// Firing forfeits spawn protection — a protected player can still choose to shoot, but
+	// doing so immediately exposes them, matching the usual "no protected pot-shots" convention.
+	public void ClearSpawnProtection()
+	{
+		_spawnProtectionStart = SpawnProtectionDuration;
 	}
 
 	protected override void OnUpdate()
@@ -80,6 +91,7 @@ public sealed class Health : Component
 
 		Current = MaxHealth;
 		IsDead = false;
+		_spawnProtectionStart = 0;
 	}
 
 	private void SetVisible( bool visible )
