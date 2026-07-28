@@ -31,7 +31,7 @@ public sealed class Health : Component
 	public void TakeDamage( float amount, GameObject attacker )
 	{
 		if ( Current <= 0f || IsDead ) return;
-		if ( RoundManager.Instance is not null && RoundManager.Instance.RoundOver ) return;
+		if ( RoundManager.Instance is not null && ( RoundManager.Instance.RoundOver || RoundManager.Instance.WarmingUp ) ) return;
 
 		var myTeam = _team?.Team ?? Team.Unassigned;
 		var attackerTeam = attacker?.Components.Get<TeamMember>()?.Team ?? Team.Unassigned;
@@ -47,7 +47,7 @@ public sealed class Health : Component
 			IsDead = true;
 			_deathTime = 0;
 
-			RoundManager.Instance?.ReportKill( attackerTeam, myTeam );
+			RoundManager.Instance?.ReportKill( attackerTeam, myTeam, attacker, GameObject );
 		}
 	}
 

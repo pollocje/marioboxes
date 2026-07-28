@@ -142,14 +142,12 @@ just now filtered to the player's own team's `SpawnPoint`s.
 - **5v5 isn't hard-capped.** `PlayerSpawner` balances team *counts* but won't
   refuse a 6th player onto a team or queue anyone as a spectator. Fine for
   testing, needs a real cap + spectator/queue flow for a real 10-player match.
-- **No scoreboard/HUD.** `RoundManager.RedScore`/`BlueScore`/`TimeRemaining`/
-  `WinningTeam` are all there to bind to, but no `.razor` UI reads them yet —
-  next logical step once the above compiles and networks correctly.
-- **No individual kill/death tracking**, only team totals — fine for the win
-  condition, but a per-player killfeed would need more.
-- **Movement isn't frozen during intermission** — players can still run
-  around, they just can't deal or take damage. Intentional simplification, not
-  a bug — flag if you want a hard freeze instead.
+- **No scoreboard/HUD.** `RoundManager`'s state and the new `PlayerStats` are
+  all there to bind to, but no `.razor` UI reads them yet — deliberately
+  deferred (asset/editor work).
+- **Movement isn't frozen during intermission or warmup** — players can still
+  run around, they just can't deal or take damage or fire. Intentional
+  simplification, not a bug — flag if you want a hard freeze instead.
 
 ### Files touched (gamemode pass)
 
@@ -157,6 +155,33 @@ just now filtered to the player's own team's `SpawnPoint`s.
 - Edited: `Code/PlayerSpawner.cs`, `Code/SpawnPoint.cs`, `Code/Health.cs`,
   `Code/Bullet.cs` (passes `Source` into `TakeDamage`), `Code/Shoot.cs`
   (round-over guard)
+
+## Per-player stats + match warmup (this session, follow-up)
+
+- **`PlayerStats.cs`** (new) — lives on the player prefab. Host-authoritative
+  `[Sync(SyncFlags.FromHost)]` `Kills`/`Deaths` ints. `RoundManager.ReportKill`
+  now takes `attacker`/`victim` `GameObject`s alongside the team enums, and
+  increments the right player's stats in the same host-only call that already
+  updates team scores — one authoritative place, no separate RPC needed.
+  A death is still recorded even when there's no kill credit (unattributed/
+  environmental damage), but `Kills` only increments when `attackerTeam` is a
+  real team different from the victim's.
+- **Match warmup** — `RoundManager` no longer starts its countdown at scene
+  load. New `[Sync(SyncFlags.FromHost)] bool WarmingUp` (starts `true`), and a
+  `MinPlayersToStart` property (default 2, total across both teams). While
+  `WarmingUp`, the timer doesn't tick; `Health.TakeDamage` and `Shoot.OnUpdate`
+  both now check `WarmingUp` the same way they already check `RoundOver`, so
+  nobody can fight before the match has actually started. Re-evaluated at the
+  start of every round (`StartNewRound`), not just once at boot — so if
+  everyone disconnects during intermission, the next round waits again instead
+  of immediately burning its clock with no one there.
+
+### Files touched (this follow-up)
+
+- New: `Code/PlayerStats.cs`
+- Edited: `Code/RoundManager.cs` (warmup state, `ReportKill` signature change),
+  `Code/Health.cs` (passes attacker/victim into `ReportKill`, warmup guard),
+  `Code/Shoot.cs` (warmup guard)
 
 ## TODO — wiring this up at home
 
@@ -179,6 +204,9 @@ just now filtered to the player's own team's `SpawnPoint`s.
       treat the player as `Team.Unassigned` if it's missing, so this will fail
       silently (no team assignment, no friendly-fire protection) rather than
       crash if forgotten.
+- [ ] Add a `PlayerStats` component to `_player.prefab` too — same silent-noop
+      failure mode as `TeamMember` if it's missing (kills/deaths just never
+      increment, nothing crashes).
 - [ ] Add a `RoundManager` GameObject to the scene (one instance).
 - [ ] Set `Team` on each `SpawnPoint` in the arena — split them Red/Blue so
       teams don't spawn on top of each other. Currently every existing
@@ -229,10 +257,22 @@ but not certain confidence, since s&box's networking API has shifted before:**
     team's spawn points; shooting a teammate does nothing (with `FriendlyFire`
     off); shooting an enemy counts toward that enemy's team score; reaching 50
     kills ends the round and, after 10s, a new one starts with scores reset.
+  - Warmup: with only one client connected, confirm nobody can deal/take
+    damage or fire, and `TimeRemaining` isn't counting down. Connect a second
+    client (satisfying `MinPlayersToStart`) and confirm the match actually
+    starts.
+  - Stats: killing an enemy increments the killer's `PlayerStats.Kills` and
+    the victim's `Deaths`; team-kills and unattributed deaths still increment
+    `Deaths` but never `Kills`.
 
 ## Not yet started
 
-- **Scoreboard/timer HUD** — `RoundManager`'s synced state is ready to bind to,
-  no `.razor` UI built yet.
+- **Scoreboard/timer HUD** — `RoundManager` and `PlayerStats`' synced state is
+  ready to bind to, no `.razor` UI built yet (deliberately deferred).
 - **Hard 5v5 cap / spectator queue** — see "Known simplifications" above.
-- **Per-player kill/death tracking** — only team totals exist right now.
+- **Spawn protection** — no post-respawn invulnerability window yet.
+- **Overtime on a timed tie** — currently just ends in a draw.
+- **Explicit disconnect handling** — nothing currently reacts when a player
+  leaves mid-round (team counts/`RoundManager` should still end up correct
+  once their networked objects are cleaned up, but this hasn't been reasoned
+  through carefully or tested).
