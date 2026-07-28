@@ -16,10 +16,12 @@ public sealed class Health : Component
 	private RealTimeSince _spawnProtectionStart;
 	private bool _lastVisible = true;
 	private TeamMember _team;
+	private WeaponHolder _weaponHolder;
 
 	protected override void OnStart()
 	{
 		_team = Components.Get<TeamMember>();
+		_weaponHolder = Components.Get<WeaponHolder>();
 		_spawnProtectionStart = 0;
 
 		if ( !IsProxy )
@@ -30,8 +32,9 @@ public sealed class Health : Component
 	// runs on the connection that owns this Health — so HP mutation always happens exactly once,
 	// on the victim's machine, and replicates out from there via [Sync]. `attacker` is the
 	// shooter's player GameObject (see Bullet.Source) — used for friendly fire and kill credit.
+	// `weaponName` is passed through to RoundManager purely for the killfeed.
 	[Rpc.Owner]
-	public void TakeDamage( float amount, GameObject attacker )
+	public void TakeDamage( float amount, GameObject attacker, string weaponName )
 	{
 		if ( Current <= 0f || IsDead ) return;
 		if ( RoundManager.Instance is not null && ( RoundManager.Instance.RoundOver || RoundManager.Instance.WarmingUp ) ) return;
@@ -51,7 +54,7 @@ public sealed class Health : Component
 			IsDead = true;
 			_deathTime = 0;
 
-			RoundManager.Instance?.ReportKill( attackerTeam, myTeam, attacker, GameObject );
+			RoundManager.Instance?.ReportKill( attackerTeam, myTeam, attacker, GameObject, weaponName );
 		}
 	}
 
@@ -92,6 +95,7 @@ public sealed class Health : Component
 		Current = MaxHealth;
 		IsDead = false;
 		_spawnProtectionStart = 0;
+		_weaponHolder?.ResetToStartingWeapon();
 	}
 
 	private void SetVisible( bool visible )

@@ -17,6 +17,11 @@ public sealed class RoundManager : Component
 
 	public static RoundManager Instance { get; private set; }
 
+	// Fires locally on every client whenever ReportKill processes a death — killerName,
+	// victimName, weaponName, killerTeam, victimTeam. Purely a plumbing layer: no UI reads
+	// this yet, but a future killfeed just subscribes here instead of needing its own RPC.
+	public static event System.Action<string, string, string, Team, Team> OnKillFeedEvent;
+
 	[Sync( SyncFlags.FromHost )] public int RedScore { get; private set; }
 	[Sync( SyncFlags.FromHost )] public int BlueScore { get; private set; }
 	[Sync( SyncFlags.FromHost )] public float TimeRemaining { get; private set; }
@@ -86,12 +91,16 @@ public sealed class RoundManager : Component
 	// kill is counted exactly once regardless of who reports it. attacker/victim are used only
 	// for per-player PlayerStats; team totals (the actual win condition) key off attackerTeam.
 	[Rpc.Host]
-	public void ReportKill( Team attackerTeam, Team victimTeam, GameObject attacker, GameObject victim )
+	public void ReportKill( Team attackerTeam, Team victimTeam, GameObject attacker, GameObject victim, string weaponName )
 	{
 		if ( RoundOver ) return;
 
 		var victimStats = victim?.Components.Get<PlayerStats>();
 		if ( victimStats is not null ) victimStats.Deaths++;
+
+		// Every death is worth reporting to the killfeed, even ones with no kill credit
+		// (team-kills, unattributed damage) — a future UI can decide how to display those.
+		BroadcastKillFeed( attacker?.Name ?? "World", victim?.Name ?? "Unknown", weaponName ?? "", attackerTeam, victimTeam );
 
 		// No kill credit for environmental/unattributed deaths or team-kills (the latter
 		// shouldn't reach here anyway since Health blocks friendly-fire damage by default).
@@ -111,6 +120,13 @@ public sealed class RoundManager : Component
 
 		if ( RedScore >= KillsToWin ) EndRound( Team.Red );
 		else if ( BlueScore >= KillsToWin ) EndRound( Team.Blue );
+	}
+
+	// Broadcasts so OnKillFeedEvent fires identically on every client, not just the host.
+	[Rpc.Broadcast]
+	private void BroadcastKillFeed( string killerName, string victimName, string weaponName, Team killerTeam, Team victimTeam )
+	{
+		OnKillFeedEvent?.Invoke( killerName, victimName, weaponName, killerTeam, victimTeam );
 	}
 
 	private int CountTeam( Team team )

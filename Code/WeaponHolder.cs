@@ -46,6 +46,14 @@ public sealed class WeaponHolder : Component
 		EquipBroadcast( weaponPrefab.Name );
 	}
 
+	// Called by Health on respawn — whatever was picked up before dying is discarded, you always
+	// come back with the starting weapon.
+	public void ResetToStartingWeapon()
+	{
+		if ( StartingWeaponPrefab is not null )
+			Equip( StartingWeaponPrefab );
+	}
+
 	// Broadcasts so every client — including whichever one called it — applies the same visuals
 	// and weapon stats at the same time, instead of only the caller's machine knowing about it.
 	[Rpc.Broadcast]

@@ -220,6 +220,35 @@ just now filtered to the player's own team's `SpawnPoint`s.
   (`ClearSpawnProtection` on fire), `Code/RoundManager.cs` (`Overtime` state,
   per-team disconnect polling)
 
+## Weapon reset on death + killfeed plumbing (this session, third follow-up)
+
+- **Weapon reset on death** — new `WeaponHolder.ResetToStartingWeapon()`,
+  called from `Health.cs` at the exact moment a player respawns (same place
+  HP/position/spawn-protection already reset). Whatever weapon they'd picked
+  up is discarded — `EquipLocal`'s existing `CurrentWeapon?.Destroy()` handles
+  that as a side effect of equipping the starting weapon again, no extra code
+  needed for the "discard" part. Reset happens on respawn, not at the moment
+  of death.
+- **Killfeed plumbing** — no UI, just the networked data path. `Bullet.cs`
+  gained a `WeaponName` string (set in `Shoot.Fire()` from `WeaponHolder.
+  CurrentWeaponId` — the synced ID, not the runtime clone's `GameObject.Name`,
+  to avoid relying on how `Clone()` happens to name instances). It flows
+  through `Health.TakeDamage(amount, attacker, weaponName)` into
+  `RoundManager.ReportKill`, which broadcasts it via a new static event:
+  `RoundManager.OnKillFeedEvent` — `Action<killerName, victimName, weaponName,
+  killerTeam, victimTeam>`, fired identically on every client through a
+  `[Rpc.Broadcast]` method. Fires for *every* death, including team-kills and
+  unattributed ones (kill credit is still team-only, gated separately). A
+  future killfeed UI just subscribes to this event — no networking of its own
+  required.
+
+### Files touched (this follow-up)
+
+- Edited: `Code/WeaponHolder.cs` (`ResetToStartingWeapon`), `Code/Health.cs`
+  (calls it on respawn, threads `weaponName` through), `Code/Bullet.cs`
+  (`WeaponName`), `Code/Shoot.cs` (sets it from `WeaponHolder.CurrentWeaponId`),
+  `Code/RoundManager.cs` (`OnKillFeedEvent`, `BroadcastKillFeed`)
+
 ## Asset/Editor Checklist — everything to wire up by hand
 
 None of this can be done from `Code/` alone; it all needs the S&Box editor.
@@ -319,9 +348,19 @@ but not certain confidence, since s&box's networking API has shifted before:**
     the round ends in favor of the remaining team within roughly a frame or
     two. Disconnect both — confirm it resets to `WarmingUp` instead of
     leaving a stale `RoundOver`/score state.
+  - Weapon reset: pick up a non-starting weapon, die, respawn — confirm you're
+    back to the starting weapon (pistol), not what you died holding.
+  - Killfeed: subscribe something quick to `RoundManager.OnKillFeedEvent`
+    (even just a `Log.Info` in a throwaway component) and confirm it fires
+    with the right killer/victim/weapon/team names on every client, not just
+    the one that landed the kill.
 
 ## Not yet started
 
-- **Scoreboard/timer HUD** — `RoundManager` and `PlayerStats`' synced state is
-  ready to bind to, no `.razor` UI built yet (deliberately deferred).
+- **Scoreboard/timer/killfeed HUD** — `RoundManager`'s state, `PlayerStats`,
+  and `OnKillFeedEvent` are all there to build on, no `.razor` UI built yet
+  (deliberately deferred).
 - **Hard 5v5 cap / spectator queue** — see "Known simplifications" above.
+- **Host-validated hit confirmation** — damage still trusts the shooter's
+  client (see the Health/damage authority note near the top); not hardened
+  this session.

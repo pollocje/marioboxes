@@ -9,6 +9,9 @@ public sealed class Bullet : Component
 	public Vector3 Velocity { get; set; }
 	public GameObject Source { get; set; }
 
+	// Purely for the killfeed — see RoundManager.ReportKill/OnKillFeedEvent.
+	public string WeaponName { get; set; }
+
 	// Set true on the copies broadcast to non-owning clients — they fly for visual feedback
 	// only and never trace or deal damage, so a hit is never resolved more than once.
 	public bool IsCosmetic { get; set; }
@@ -45,7 +48,7 @@ public sealed class Bullet : Component
 			{
 				var health = tr.GameObject.Components.Get<Health>()
 					?? tr.GameObject.Components.GetInParent<Health>();
-				health?.TakeDamage( Damage, Source ); // routes through Health's [Rpc.Owner] — resolves on the victim's machine
+				health?.TakeDamage( Damage, Source, WeaponName ); // routes through Health's [Rpc.Owner] — resolves on the victim's machine
 				GameObject.Destroy();
 				return;
 			}

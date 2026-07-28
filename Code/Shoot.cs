@@ -81,6 +81,9 @@ public sealed class Shoot : Component
 			bulletComp.Velocity = aimDir * BulletSpeed;
 			bulletComp.Damage = Damage;
 			bulletComp.Source = GameObject.Parent;
+			// WeaponHolder.CurrentWeaponId, not this GameObject's own Name — a reliable already-synced
+			// id rather than relying on how Clone() happens to name the runtime weapon instance.
+			bulletComp.WeaponName = GameObject.Parent?.Components.Get<WeaponHolder>()?.CurrentWeaponId;
 		}
 
 		FireEffects( barrelPos, aimDir );
