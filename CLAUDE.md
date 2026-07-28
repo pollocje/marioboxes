@@ -220,35 +220,39 @@ just now filtered to the player's own team's `SpawnPoint`s.
   (`ClearSpawnProtection` on fire), `Code/RoundManager.cs` (`Overtime` state,
   per-team disconnect polling)
 
-## TODO — wiring this up at home
+## Asset/Editor Checklist — everything to wire up by hand
 
-**Scene/prefab wiring (needs the editor, can't be done from Code/ alone):**
+None of this can be done from `Code/` alone; it all needs the S&Box editor.
+Nothing here will throw a compile error if skipped — every one of these fails
+*silently* (a missing component just means that feature quietly no-ops), so
+it's worth going through deliberately rather than trusting a clean compile.
 
-- [ ] Add a `PlayerSpawner` GameObject to the startup scene (`minimal.scene`,
-      and any other playable scene), set its `PlayerPrefab` to `_player.prefab`.
-- [ ] Drop several `SpawnPoint` components around the arena (currently unknown
-      how many exist — `Health.cs` and `PlayerSpawner.cs` both now pick
-      *randomly* among all of them instead of always using the first one).
-- [ ] On the player prefab's `WeaponHolder` component, populate the new
-      `WeaponRegistry` list with every weapon prefab in `Assets/Prefabs/Weapons/`
-      (laser, smg, sword, ar15, burstRifle, grenadeLauncher, pistol) — equips
-      will silently fail to resolve for any weapon not in this list.
-- [ ] Double check `_player.prefab`'s existing component wiring (`GunAim.
-      PlayerCenter`/`BarrelTip`, `GrapplingHook.PlayerCenter`, etc.) — none of
-      that was visible from this sparse checkout, only inferred from the C#.
-- [ ] Add a `TeamMember` component to `_player.prefab` — `PlayerSpawner` and
-      `Health` both do `Components.Get<TeamMember>()` and quietly no-op /
-      treat the player as `Team.Unassigned` if it's missing, so this will fail
-      silently (no team assignment, no friendly-fire protection) rather than
-      crash if forgotten.
-- [ ] Add a `PlayerStats` component to `_player.prefab` too — same silent-noop
-      failure mode as `TeamMember` if it's missing (kills/deaths just never
-      increment, nothing crashes).
-- [ ] Add a `RoundManager` GameObject to the scene (one instance).
-- [ ] Set `Team` on each `SpawnPoint` in the arena — split them Red/Blue so
-      teams don't spawn on top of each other. Currently every existing
-      `SpawnPoint` defaults to `Team.Unassigned`, which both teams will use as
-      a fallback — fine for a first test, not what you want for a real match.
+**`_player.prefab`:**
+
+- [ ] Add a `TeamMember` component. Without it, `PlayerSpawner`/`Health` treat
+      the player as `Team.Unassigned` forever — no team assignment, no
+      friendly-fire protection, spawns fall back to unassigned points.
+- [ ] Add a `PlayerStats` component. Without it, kills/deaths just never
+      increment for that player — no crash, no visible symptom.
+- [ ] On the `WeaponHolder` component, populate the `WeaponRegistry` list with
+      every weapon prefab in `Assets/Prefabs/Weapons/`: `weapon.laser`,
+      `weapon.smg`, `weapon.sword`, `weapon_ar15`, `weapon_burstRifle`,
+      `weapon_grenadeLauncher`, `weapon_pistol`. Any weapon not in this list
+      will fail to resolve on equip.
+- [ ] Double-check the existing wiring on `GunAim` (`PlayerCenter`,
+      `BarrelTip`) and `GrapplingHook` (`PlayerCenter`) — these were never
+      visible from this sparse checkout, only inferred from the C#.
+
+**Scene (`minimal.scene`, and any other playable scene):**
+
+- [ ] Add a `PlayerSpawner` GameObject, set its `PlayerPrefab` to
+      `_player.prefab`.
+- [ ] Add a `RoundManager` GameObject (exactly one).
+- [ ] Add/verify enough `SpawnPoint`s around the arena, and set `Team` on
+      each — split them roughly evenly Red/Blue so the two teams don't spawn
+      on top of each other. Every `SpawnPoint` currently defaults to
+      `Team.Unassigned` (usable by either team as a fallback), which works for
+      a first smoke test but isn't what you want for a real match.
 
 **Verify against current S&Box docs — API surface I used with moderate-to-high
 but not certain confidence, since s&box's networking API has shifted before:**
