@@ -49,16 +49,11 @@ machine.
 - **Movement**: stays owner-authoritative, unchanged. Relies on S&Box's built-in
   networked-transform sync/interpolation for proxies to see other players move —
   **not independently verified this session**, see checklist.
-- **Health/damage**: `[Sync] public float Current`. `TakeDamage(float amount,
-  GameObject attacker)` is `[Rpc.Owner]` — any client can call it (the shooter
-  does, from `Bullet.cs`, passing its `Source`), but the method body only
-  executes on the connection that *owns* the target, so HP is always mutated
-  exactly once, by the victim's own machine, and replicates out from there.
-  This is **not cheat-proof** (it trusts whichever client detected the hit) —
-  it was chosen to match the existing owner-authoritative pattern rather than
-  introduce host-authority everywhere. A host-validated hit-confirm pass is a
-  reasonable future hardening step. `attacker` is also used for friendly-fire
-  checking and kill-credit — see the Team Deathmatch section below.
+- **Health/damage**: `[Sync] public float Current`. As of the "host-validated
+  hit confirmation" pass below, `TakeDamage` is a two-hop RPC rather than a
+  single owner-trusting one — see that section for the current design.
+  `attacker` is also used for friendly-fire checking and kill-credit — see the
+  Team Deathmatch section below.
 - **Weapons**: equipped weapon is synced as a **string ID** (the prefab's
   `Name`), not a GameObject reference — raw prefab/asset references can't be
   synced, only spawned networked GameObjects can. `WeaponHolder.Equip()` now
@@ -139,9 +134,9 @@ just now filtered to the player's own team's `SpawnPoint`s.
 
 ### Known simplifications / not done
 
-- **5v5 isn't hard-capped.** `PlayerSpawner` balances team *counts* but won't
-  refuse a 6th player onto a team or queue anyone as a spectator. Fine for
-  testing, needs a real cap + spectator/queue flow for a real 10-player match.
+- **5v5 is hard-capped as of a later pass this session** — see "Hard 5v5 cap +
+  host-validated hit confirmation" further down. Left the note here since this
+  section reflects the state at the time of the original gamemode pass.
 - **No scoreboard/HUD.** `RoundManager`'s state and the new `PlayerStats` are
   all there to bind to, but no `.razor` UI reads them yet — deliberately
   deferred (asset/editor work).
@@ -249,6 +244,67 @@ just now filtered to the player's own team's `SpawnPoint`s.
   (`WeaponName`), `Code/Shoot.cs` (sets it from `WeaponHolder.CurrentWeaponId`),
   `Code/RoundManager.cs` (`OnKillFeedEvent`, `BroadcastKillFeed`)
 
+## Hard 5v5 cap + host-validated hit confirmation (this session, fourth follow-up)
+
+- **Hard 5v5 cap / spectator queue** — `PlayerSpawner` gained
+  `MaxPlayersPerTeam` (default 5) and `PickTeamWithRoom()`, which returns
+  `Team.Unassigned` once both teams are at the cap instead of always finding
+  a team like the old `PickBalancedTeam` did. When that happens, the joining
+  `Connection` goes into a local `_spectatorQueue` list instead of getting a
+  player GameObject spawned at all — nothing is cloned or `NetworkSpawn`'d for
+  them yet. A new `OnUpdate` (host-only) polls that queue every frame and
+  spawns the front of the line as soon as a team has room (a disconnect
+  elsewhere freeing up a slot). Queued connections are pruned against
+  `Connection.All` each check so someone who disconnects before ever getting a
+  slot doesn't sit in the queue forever.
+  **Important scope note**: this is queue logic only. A queued player has *no
+  GameObject, no camera, nothing to look at* — there's no spectator-mode
+  camera or UI built here, because that needs asset/editor work this session
+  doesn't have access to. They're genuinely just waiting, invisibly, until a
+  slot opens. Worth keeping in mind before testing with more than 10 players.
+- **Host-validated hit confirmation** — `Health.TakeDamage` used to be a
+  single `[Rpc.Owner]` call that the victim's machine trusted unconditionally.
+  It's now a two-hop RPC: the shooter calls the same `TakeDamage(amount,
+  attacker, weaponName)`, but it's now `[Rpc.Host]` — the host runs it first
+  and actually checks the claim against something it can observe itself,
+  rather than trusting the caller's numbers:
+  - **Range plausibility** — rejects the hit if `attacker`'s position is
+    further than `MaxValidHitRange` (2500, comfortably above `Bullet`'s
+    default 2000 `MaxRange`) from the victim's position. Both positions come
+    from normal transform sync, so this reuses the same "proxy transform sync
+    is automatic" assumption already flagged elsewhere rather than adding a
+    new one.
+  - **Damage clamp** — `amount` is capped at `MaxDamagePerHit` (100) before
+    anything is applied, so a client can't just claim an arbitrary damage
+    number.
+  - Round-state and friendly-fire checks that used to live in the single
+    method now run here, host-side, since the host is now the one deciding
+    whether a hit is even legitimate.
+  Once validated, the host calls a new private `[Rpc.Owner]
+  ApplyValidatedDamage(...)` — this is the actual HP mutation, and it's
+  *still* owner-authoritative, same as before. The host hop is a validation
+  gate, not a change of who owns `Current`/`IsDead` — deliberately, so this
+  didn't need to touch the `[Sync]` flag on those properties or the
+  owner-authoritative respawn logic in `OnUpdate`, both of which would have
+  dragged in much bigger, riskier changes (see the "what I didn't do" note
+  below). Spawn protection is re-checked in `ApplyValidatedDamage`, not
+  `TakeDamage` — it's a local, unsynced timer, so only the owner's own copy of
+  it is ever reliably correct; checking it host-side would silently misbehave
+  for every player except whichever one the host happens to be.
+  **What this doesn't cover**: no lag compensation, no line-of-sight/obstacle
+  check (only straight-line distance), no per-attacker fire-rate validation
+  against weapon stats. This catches blatant cheating (impossible range,
+  absurd damage claims), not a sophisticated aimbot respecting normal ranges.
+  Full server-authoritative simulation (host re-running the bullet trace
+  itself) would close more of that gap but is a substantially bigger
+  architectural change than this session took on.
+
+### Files touched (this follow-up)
+
+- Edited: `Code/PlayerSpawner.cs` (`MaxPlayersPerTeam`, spectator queue),
+  `Code/Health.cs` (`TakeDamage`/`ApplyValidatedDamage` split, range/damage
+  validation)
+
 ## Asset/Editor Checklist — everything to wire up by hand
 
 None of this can be done from `Code/` alone; it all needs the S&Box editor.
@@ -311,6 +367,16 @@ but not certain confidence, since s&box's networking API has shifted before:**
 - [ ] Whether `Scene.GetAllComponents<TeamMember>()` reflects a disconnected
       player's departure immediately or with a frame or two of lag — affects
       how snappy `RoundManager`'s empty-team detection actually is in practice.
+- [ ] `Connection.All` — used by `PlayerSpawner` to prune the spectator queue
+      of anyone who disconnected before getting a slot. Assumed to be an
+      enumerable of currently-connected `Connection`s; not verified.
+- [ ] `[Rpc.Host]` being callable from within another `[Rpc.Host]`-adjacent
+      call chain, and specifically a `[Rpc.Owner]` method (`ApplyValidatedDamage`)
+      being reachable as a plain method call from inside a `[Rpc.Host]` method
+      (`TakeDamage`) — i.e. that calling a `[Rpc.X]` method from inside another
+      RPC's body still triggers the attribute's routing rather than just
+      running inline on whichever machine is currently executing. This is the
+      new host-validated damage path's central assumption.
 
 **Test plan once it compiles:**
 
@@ -354,13 +420,27 @@ but not certain confidence, since s&box's networking API has shifted before:**
     (even just a `Log.Info` in a throwaway component) and confirm it fires
     with the right killer/victim/weapon/team names on every client, not just
     the one that landed the kill.
+  - 5v5 cap: connect an 11th client (or temporarily lower `MaxPlayersPerTeam`
+    to make this easier to reach) and confirm they're queued rather than
+    forced onto a full team — no player GameObject for them at all. Disconnect
+    someone from a full team and confirm the queued connection gets spawned
+    within a frame or two.
+  - Hit validation: this is the hardest one to test meaningfully without
+    modifying a client to actually cheat. At minimum, confirm normal play
+    still works end-to-end (damage still applies, kills still count) now that
+    it's routing through an extra host hop — that's the main regression risk.
+    If you want to actually exercise the validation, temporarily call
+    `TakeDamage` with an absurd `amount` or a far-away `attacker` from a debug
+    command and confirm it's rejected.
 
 ## Not yet started
 
 - **Scoreboard/timer/killfeed HUD** — `RoundManager`'s state, `PlayerStats`,
   and `OnKillFeedEvent` are all there to build on, no `.razor` UI built yet
   (deliberately deferred).
-- **Hard 5v5 cap / spectator queue** — see "Known simplifications" above.
-- **Host-validated hit confirmation** — damage still trusts the shooter's
-  client (see the Health/damage authority note near the top); not hardened
-  this session.
+- **Spectator camera/UI** — the queue in `PlayerSpawner` exists, but a queued
+  player has nothing to look at; needs actual spectator-mode camera/UI work.
+- **Full server-authoritative hit simulation** — the host validates range and
+  clamps damage, but doesn't re-run the bullet trace itself, so it's not a
+  full replacement for a client actually lying about *whether* it hit
+  something within a plausible range, only about impossible claims.
