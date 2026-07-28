@@ -7,12 +7,18 @@ public sealed class GrapplingHook : Component
 	[Property] public float HookPullForce { get; set; } = 350f;
 	[Property] public GameObject PlayerCenter { get; set; }
 
-	public bool IsHooked => _state == HookState.Hooked;
+	public bool IsHooked => State == HookState.Hooked;
 
 	private enum HookState { Idle, Firing, Hooked }
-	private HookState _state = HookState.Idle;
+
+	// Synced so proxies can draw the rope and know the current phase — only the owner writes
+	// these. Previously OnUpdate bailed out entirely for proxies before the rope-drawing code
+	// even ran, so nobody but the owner ever saw their own grappling rope.
+	[Sync] private HookState State { get; set; } = HookState.Idle;
+	[Sync] private Vector3 HookPoint { get; set; }
+	[Sync] private Vector3 FiringHeadPoint { get; set; }
+
 	private GameObject _hookGO;
-	private Vector3 _hookPoint;
 	private float _ropeLength;
 	private GunAim _gunAim;
 	private Rigidbody _rb;
@@ -34,27 +40,33 @@ public sealed class GrapplingHook : Component
 
 	protected override void OnUpdate()
 	{
-		if ( IsProxy ) return;
-
-		if ( Input.Pressed( "attack2" ) || ( _state != HookState.Idle && Input.Pressed( "Jump" ) ) )
+		if ( !IsProxy )
 		{
-			if ( _state == HookState.Idle )
-				Fire();
-			else
-				Detach();
+			if ( Input.Pressed( "attack2" ) || ( State != HookState.Idle && Input.Pressed( "Jump" ) ) )
+			{
+				if ( State == HookState.Idle )
+					Fire();
+				else
+					Detach();
+			}
+
+			// _hookGO only ever exists on the owner's machine (it's a plain local GameObject, never
+			// networked) — mirror its live position into synced state so proxies can draw it too.
+			if ( State == HookState.Firing && _hookGO is not null )
+				FiringHeadPoint = _hookGO.WorldPosition;
 		}
 
-		// Update rope visual
+		// Rope visual — driven entirely by synced state, so it renders the same for owner and proxies.
 		var ropeStart = PlayerCenter?.WorldPosition ?? WorldPosition;
-		if ( _state == HookState.Firing && _hookGO is not null )
+		if ( State == HookState.Firing )
 		{
 			_rope.Enabled = true;
-			_rope.VectorPoints = new System.Collections.Generic.List<Vector3> { ropeStart, _hookGO.WorldPosition };
+			_rope.VectorPoints = new List<Vector3> { ropeStart, FiringHeadPoint };
 		}
-		else if ( _state == HookState.Hooked )
+		else if ( State == HookState.Hooked )
 		{
 			_rope.Enabled = true;
-			_rope.VectorPoints = new System.Collections.Generic.List<Vector3> { ropeStart, _hookPoint };
+			_rope.VectorPoints = new List<Vector3> { ropeStart, HookPoint };
 		}
 		else
 		{
@@ -65,9 +77,9 @@ public sealed class GrapplingHook : Component
 	protected override void OnFixedUpdate()
 	{
 		if ( IsProxy ) return;
-		if ( _state != HookState.Hooked ) return;
+		if ( State != HookState.Hooked ) return;
 
-		var toHook = _hookPoint - WorldPosition;
+		var toHook = HookPoint - WorldPosition;
 		float dist = toHook.Length;
 		var ropeDir = toHook.Normal;
 
@@ -97,29 +109,30 @@ public sealed class GrapplingHook : Component
 		proj.Source = this;
 		proj.PlaneX = origin.x;
 
-		_state = HookState.Firing;
+		FiringHeadPoint = origin;
+		State = HookState.Firing;
 	}
 
 	public void OnHookLanded( Vector3 point )
 	{
-		_hookPoint = point;
-		_ropeLength = (_hookPoint - WorldPosition).Length;
+		HookPoint = point;
+		_ropeLength = (HookPoint - WorldPosition).Length;
 		_hookGO?.Destroy();
 		_hookGO = null;
-		_state = HookState.Hooked;
+		State = HookState.Hooked;
 	}
 
 	public void OnHookMissed()
 	{
 		_hookGO = null;
-		_state = HookState.Idle;
+		State = HookState.Idle;
 	}
 
 	public void Detach()
 	{
 		_hookGO?.Destroy();
 		_hookGO = null;
-		_state = HookState.Idle;
+		State = HookState.Idle;
 	}
 
 	protected override void OnDestroy()

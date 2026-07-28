@@ -67,7 +67,8 @@ public sealed class Shoot : Component
 		var aimDir = _gunAim.AimDir;
 		var barrelPos = _gunAim.BarrelTip.WorldPosition;
 
-		// Bullet
+		// Authoritative bullet — only ever exists on this client. It resolves the hit and deals
+		// damage; see Bullet.IsCosmetic for why other clients get a separate, non-authoritative copy.
 		var bullet = BulletPrefab.Clone( barrelPos );
 		bullet.WorldRotation = Rotation.LookAt( aimDir, Vector3.Up );
 		var bulletComp = bullet.Components.Get<Bullet>();
@@ -78,7 +79,22 @@ public sealed class Shoot : Component
 			bulletComp.Source = GameObject.Parent;
 		}
 
-		// Muzzle flash
+		FireEffects( barrelPos, aimDir );
+
+		CurrentAmmo--;
+		if ( CurrentAmmo <= 0 )
+		{
+			IsReloading = true;
+			_reloadStarted = 0;
+			PlayReloadSound( barrelPos );
+		}
+	}
+
+	// Broadcasts the parts of firing that everyone should see/hear — without this, only the
+	// shooter themselves ever sees a muzzle flash, hears the gun, or sees any sign a bullet fired.
+	[Rpc.Broadcast]
+	private void FireEffects( Vector3 barrelPos, Vector3 aimDir )
+	{
 		if ( _muzzleFlashPrefab is not null )
 		{
 			var flash = _muzzleFlashPrefab.Clone( barrelPos );
@@ -87,19 +103,28 @@ public sealed class Shoot : Component
 				flash.Components.Create<AutoDestroy>();
 		}
 
-		// Fire sound
 		if ( _fireSound is not null )
 			Sound.Play( _fireSound, barrelPos );
 
-		CurrentAmmo--;
-		if ( CurrentAmmo <= 0 )
+		// The owner already spawned the authoritative bullet locally in Fire() — everyone else
+		// gets a cosmetic-only tracer so the shot is actually visible to them.
+		if ( IsProxy && BulletPrefab is not null )
 		{
-			IsReloading = true;
-			_reloadStarted = 0;
-
-			// Reload sound
-			if ( _reloadSound is not null )
-				Sound.Play( _reloadSound, barrelPos );
+			var bullet = BulletPrefab.Clone( barrelPos );
+			bullet.WorldRotation = Rotation.LookAt( aimDir, Vector3.Up );
+			var bulletComp = bullet.Components.Get<Bullet>();
+			if ( bulletComp is not null )
+			{
+				bulletComp.Velocity = aimDir * BulletSpeed;
+				bulletComp.IsCosmetic = true;
+			}
 		}
+	}
+
+	[Rpc.Broadcast]
+	private void PlayReloadSound( Vector3 pos )
+	{
+		if ( _reloadSound is not null )
+			Sound.Play( _reloadSound, pos );
 	}
 }

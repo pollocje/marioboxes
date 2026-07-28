@@ -9,6 +9,10 @@ public sealed class Bullet : Component
 	public Vector3 Velocity { get; set; }
 	public GameObject Source { get; set; }
 
+	// Set true on the copies broadcast to non-owning clients — they fly for visual feedback
+	// only and never trace or deal damage, so a hit is never resolved more than once.
+	public bool IsCosmetic { get; set; }
+
 	private Vector3 _startPosition;
 	private float _age;
 	private float _planeX;
@@ -29,19 +33,22 @@ public sealed class Bullet : Component
 		var lastPos = WorldPosition;
 		var nextPos = (lastPos + Velocity * Time.Delta).WithX( _planeX );
 
-		// Sweep from last to next position to catch hits without tunneling
-		var tr = Scene.Trace.Ray( lastPos, nextPos )
-			.IgnoreGameObjectHierarchy( GameObject )
-			.IgnoreGameObjectHierarchy( Source )
-			.Run();
-
-		if ( tr.Hit )
+		if ( !IsCosmetic )
 		{
-			var health = tr.GameObject.Components.Get<Health>()
-				?? tr.GameObject.Components.GetInParent<Health>();
-			health?.TakeDamage( Damage );
-			GameObject.Destroy();
-			return;
+			// Sweep from last to next position to catch hits without tunneling
+			var tr = Scene.Trace.Ray( lastPos, nextPos )
+				.IgnoreGameObjectHierarchy( GameObject )
+				.IgnoreGameObjectHierarchy( Source )
+				.Run();
+
+			if ( tr.Hit )
+			{
+				var health = tr.GameObject.Components.Get<Health>()
+					?? tr.GameObject.Components.GetInParent<Health>();
+				health?.TakeDamage( Damage ); // routes through Health's [Rpc.Owner] — resolves on the victim's machine
+				GameObject.Destroy();
+				return;
+			}
 		}
 
 		WorldPosition = nextPos;

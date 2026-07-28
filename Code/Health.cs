@@ -5,43 +5,61 @@ public sealed class Health : Component
 	[Property] public float MaxHealth { get; set; } = 100f;
 	[Property] public float RespawnDelay { get; set; } = 3f;
 
-	public float Current { get; private set; }
+	// Synced from this object's owner — the victim is authoritative over their own HP,
+	// matching the owner-authoritative pattern the rest of the project uses (see Movement).
+	[Sync] public float Current { get; private set; }
+	[Sync] private bool IsDead { get; set; }
 
-	private bool _isDead;
 	private RealTimeSince _deathTime;
+	private bool _lastVisible = true;
 
 	protected override void OnStart()
 	{
-		Current = MaxHealth;
+		if ( !IsProxy )
+			Current = MaxHealth;
 	}
 
+	// Any client can call this (e.g. the shooter that detected a hit), but the body only ever
+	// runs on the connection that owns this Health — so HP mutation always happens exactly once,
+	// on the victim's machine, and replicates out from there via [Sync].
+	[Rpc.Owner]
 	public void TakeDamage( float amount )
 	{
-		if ( Current <= 0f || _isDead ) return;
+		if ( Current <= 0f || IsDead ) return;
 
 		Current -= amount;
 
 		if ( Current <= 0f )
 		{
 			Current = 0f;
-			_isDead = true;
+			IsDead = true;
 			_deathTime = 0;
-			SetVisible( false );
 		}
 	}
 
 	protected override void OnUpdate()
 	{
-		if ( !_isDead ) return;
+		// Visibility must react for everyone, not just the owner, so other clients see deaths/respawns.
+		bool shouldBeVisible = !IsDead;
+		if ( shouldBeVisible != _lastVisible )
+		{
+			SetVisible( shouldBeVisible );
+			_lastVisible = shouldBeVisible;
+		}
+
+		if ( IsProxy ) return; // respawn timing/position stays owner-authoritative
+		if ( !IsDead ) return;
 		if ( _deathTime < RespawnDelay ) return;
 
-		var spawnPoint = Scene.GetAllComponents<SpawnPoint>().FirstOrDefault();
-		if ( spawnPoint is not null )
+		var spawnPoints = Scene.GetAllComponents<SpawnPoint>().ToList();
+		if ( spawnPoints.Count > 0 )
+		{
+			var spawnPoint = spawnPoints[Game.Random.Int( spawnPoints.Count - 1 )];
 			GameObject.WorldPosition = spawnPoint.WorldPosition;
+		}
 
 		Current = MaxHealth;
-		_isDead = false;
-		SetVisible( true );
+		IsDead = false;
 	}
 
 	private void SetVisible( bool visible )

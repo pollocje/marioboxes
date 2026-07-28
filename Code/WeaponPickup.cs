@@ -8,9 +8,15 @@ public sealed class WeaponPickup : Component
 	[Property] public float BobAmplitude { get; set; } = 5f;
 	[Property] public float BobSpeed { get; set; } = 2f;
 
-	private bool _available = true;
+	// Host-authoritative: previously every client independently scanned every WeaponHolder in the
+	// scene and granted the pickup with no ownership check at all, so any client could hand this
+	// weapon to any player, and two clients could both claim it in the same tick. The host is now
+	// the only one that decides; everyone else just reflects Available via [Sync].
+	[Sync] private bool Available { get; set; } = true;
+
 	private RealTimeSince _pickedUpAt;
 	private GameObject _visual;
+	private bool _lastVisualState = true;
 
 	protected override void OnStart()
 	{
@@ -19,13 +25,25 @@ public sealed class WeaponPickup : Component
 
 	protected override void OnUpdate()
 	{
-		if ( IsProxy ) return;
+		if ( Available != _lastVisualState )
+		{
+			_lastVisualState = Available;
+			if ( Available )
+				SpawnVisual();
+			else
+			{
+				_visual?.Destroy();
+				_visual = null;
+			}
+		}
+
+		if ( !Networking.IsHost ) return;
 		if ( WeaponPrefab is null ) return;
 
-		if ( !_available )
+		if ( !Available )
 		{
 			if ( _pickedUpAt >= RespawnTime )
-				SetAvailable( true );
+				Available = true;
 			return;
 		}
 
@@ -34,25 +52,10 @@ public sealed class WeaponPickup : Component
 			if ( (holder.WorldPosition - WorldPosition).Length <= PickupRadius )
 			{
 				holder.Equip( WeaponPrefab );
-				SetAvailable( false );
+				Available = false;
+				_pickedUpAt = 0;
 				break;
 			}
-		}
-	}
-
-	private void SetAvailable( bool available )
-	{
-		_available = available;
-
-		if ( !available )
-		{
-			_pickedUpAt = 0;
-			_visual?.Destroy();
-			_visual = null;
-		}
-		else
-		{
-			SpawnVisual();
 		}
 	}
 
