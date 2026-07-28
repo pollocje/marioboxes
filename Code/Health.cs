@@ -9,6 +9,11 @@ public sealed class Health : Component
 	[Property] public float MaxDamagePerHit { get; set; } = 100f;
 	[Property] public float MaxValidHitRange { get; set; } = 2500f;
 
+	// World Z below which a player is considered fallen out of the map and dies instantly.
+	// -1000 is a placeholder — tune per map once real maps exist; this checkout has no way to
+	// know actual arena scale.
+	[Property] public float KillZ { get; set; } = -1000f;
+
 	// Synced from this object's owner — the victim is authoritative over their own HP,
 	// matching the owner-authoritative pattern the rest of the project uses (see Movement).
 	[Sync] public float Current { get; private set; }
@@ -53,7 +58,7 @@ public sealed class Health : Component
 
 		var clampedAmount = System.MathF.Min( amount, MaxDamagePerHit );
 
-		ApplyValidatedDamage( clampedAmount, attacker, weaponName, attackerTeam, myTeam );
+		ApplyValidatedDamage( clampedAmount, attacker, weaponName );
 	}
 
 	// Only ever reached via the host-validated path above. Still runs on the victim's own
@@ -61,7 +66,7 @@ public sealed class Health : Component
 	// same as everything else in the project that's owner-authoritative (see Movement) — the host
 	// hop above is purely a validation gate, not a change of who owns this state.
 	[Rpc.Owner]
-	private void ApplyValidatedDamage( float amount, GameObject attacker, string weaponName, Team attackerTeam, Team myTeam )
+	private void ApplyValidatedDamage( float amount, GameObject attacker, string weaponName )
 	{
 		if ( Current <= 0f || IsDead ) return; // could have died to something else in the meantime
 		if ( _spawnProtectionStart < SpawnProtectionDuration ) return;
@@ -69,13 +74,20 @@ public sealed class Health : Component
 		Current -= amount;
 
 		if ( Current <= 0f )
-		{
-			Current = 0f;
-			IsDead = true;
-			_deathTime = 0;
+			Kill( attacker, weaponName );
+	}
 
-			RoundManager.Instance?.ReportKill( attackerTeam, myTeam, attacker, GameObject, weaponName );
-		}
+	// Shared by combat death and fall-death (see OnUpdate) so both go through the same
+	// respawn/kill-crediting/weapon-reset path instead of two versions that can drift apart.
+	private void Kill( GameObject attacker, string weaponName )
+	{
+		Current = 0f;
+		IsDead = true;
+		_deathTime = 0;
+
+		var myTeam = _team?.Team ?? Team.Unassigned;
+		var attackerTeam = attacker?.Components.Get<TeamMember>()?.Team ?? Team.Unassigned;
+		RoundManager.Instance?.ReportKill( attackerTeam, myTeam, attacker, GameObject, weaponName );
 	}
 
 	// Firing forfeits spawn protection — a protected player can still choose to shoot, but
@@ -95,8 +107,20 @@ public sealed class Health : Component
 			_lastVisible = shouldBeVisible;
 		}
 
-		if ( IsProxy ) return; // respawn timing/position stays owner-authoritative
-		if ( !IsDead ) return;
+		if ( IsProxy ) return; // fall-death and respawn timing/position stay owner-authoritative
+
+		if ( !IsDead )
+		{
+			// Fallen out of the map — no attacker, so this skips TakeDamage's host round-trip and
+			// spawn-protection check entirely. There's nothing to validate about your own position
+			// (it's not a claim from another client), and protection is meant to guard against
+			// other players, not the void — also deliberately not gated on RoundOver/WarmingUp,
+			// unlike combat damage, so nobody falls forever during warmup/intermission.
+			if ( WorldPosition.z < KillZ )
+				Kill( null, null );
+			return;
+		}
+
 		if ( _deathTime < RespawnDelay ) return;
 
 		var myTeam = _team?.Team ?? Team.Unassigned;

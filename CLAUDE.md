@@ -305,6 +305,42 @@ just now filtered to the player's own team's `SpawnPoint`s.
   `Code/Health.cs` (`TakeDamage`/`ApplyValidatedDamage` split, range/damage
   validation)
 
+## Fall/void-death handling (this session, fifth follow-up)
+
+Added ahead of actual map-building, since this checkout can't build maps
+(needs the editor) but a "boxes falling around gaps" game will have players
+falling off the moment real maps exist, and nothing handled that before now.
+
+- **`Health.KillZ`** (`-1000` placeholder) — checked in `OnUpdate`, owner-only,
+  every frame a player isn't already dead: `WorldPosition.z < KillZ` triggers
+  an instant kill. The threshold is a guess with no real map to calibrate
+  against — **tune it per map** once you have actual arena geometry (see
+  checklist below).
+- **Refactored death into a shared `Kill(GameObject attacker, string
+  weaponName)`** — both combat death (`ApplyValidatedDamage`) and fall-death
+  now call this one method instead of having two separate "set Current=0,
+  IsDead=true, report to RoundManager" blocks that could drift apart later
+  (e.g. if a future "drop weapon on death" visual gets added, there's only
+  one place to put it).
+- **Fall-death deliberately bypasses spawn protection and the host-validation
+  hop** — it calls `Kill()` directly rather than going through `TakeDamage`.
+  There's no attacker making a claim to validate, so the host round-trip
+  would just add latency for nothing, and spawn protection is meant to guard
+  against *other players*, not the void — someone falling off right after
+  respawning should still die.
+- **Not gated on `RoundOver`/`WarmingUp`**, unlike combat damage — falling
+  isn't combat, and gating it would mean falling off during warmup/
+  intermission just leaves you falling forever with no death or respawn.
+- Reports through `RoundManager.ReportKill` with `attacker: null`, which
+  already had an "unattributed death" path from the killfeed/friendly-fire
+  work — `Deaths` increments for the victim, no team gets kill credit, same
+  as environmental damage would if it existed elsewhere.
+
+### Files touched (this follow-up)
+
+- Edited: `Code/Health.cs` (`KillZ`, `Kill()` refactor, fall-death check in
+  `OnUpdate`)
+
 ## Asset/Editor Checklist — everything to wire up by hand
 
 None of this can be done from `Code/` alone; it all needs the S&Box editor.
@@ -338,6 +374,13 @@ it's worth going through deliberately rather than trusting a clean compile.
       on top of each other. Every `SpawnPoint` currently defaults to
       `Team.Unassigned` (usable by either team as a fallback), which works for
       a first smoke test but isn't what you want for a real match.
+
+**Per map, once you start building them:**
+
+- [ ] Set `Health.KillZ` on `_player.prefab` (or override it — it's just a
+      `[Property]`) to something below your lowest walkable geometry, with
+      enough margin that falling doesn't feel unfair. `-1000` is a guess made
+      with no real map to calibrate against.
 
 **Verify against current S&Box docs — API surface I used with moderate-to-high
 but not certain confidence, since s&box's networking API has shifted before:**
@@ -432,6 +475,10 @@ but not certain confidence, since s&box's networking API has shifted before:**
     If you want to actually exercise the validation, temporarily call
     `TakeDamage` with an absurd `amount` or a far-away `attacker` from a debug
     command and confirm it's rejected.
+  - Fall-death: once a map exists, walk/fall off the edge and confirm you die
+    and respawn like a normal death (weapon reset, killfeed entry with no
+    killer, `PlayerStats.Deaths` increments, no `Kills` awarded to anyone).
+    Confirm it still works during warmup (nothing should block it).
 
 ## Not yet started
 
